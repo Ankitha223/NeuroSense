@@ -2,11 +2,13 @@ package com.example.neurosense.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
-import com.example.neurosense.screens.FaceRegistrationScreen
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.neurosense.screens.LoginChoiceScreen
+
 import com.example.neurosense.screens.SplashScreen
+import com.example.neurosense.screens.LoginChoiceScreen
+import com.example.neurosense.screens.FaceRegistrationScreen
+import com.example.neurosense.screens.QuestionnaireScreen
 
 @Composable
 fun AppNavigation() {
@@ -25,8 +27,13 @@ fun AppNavigation() {
         composable("login_choice") {
             LoginChoiceScreen(navController)
         }
+
         composable("face_registration") {
             FaceRegistrationScreen(navController)
+        }
+
+        composable("questionnaire") {
+            QuestionnaireScreen(navController)
         }
     }
 }

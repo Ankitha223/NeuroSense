@@ -1,45 +1,218 @@
 package com.example.neurosense.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FaceRegistrationScreen(navController: NavController) {
 
+    var name by remember { mutableStateOf("") }
+    var age by remember { mutableStateOf("") }
+
+    var expanded by remember { mutableStateOf(false) }
+    var selectedGender by remember { mutableStateOf("Select Gender") }
+
+    val genders = listOf(
+        "Male",
+        "Female",
+        "Other"
+    )
+
+    var faceCaptured by remember { mutableStateOf(false) }
+    var userId by remember { mutableStateOf("") }
+
     Surface(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        color = Color.White
     ) {
 
         Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
 
-            Text(
-                text = "Face Registration",
-                fontSize = 28.sp
-            )
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "This screen will capture the user's face."
+                text = "New User Registration",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1976D2)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Please enter your personal details",
+                fontSize = 16.sp,
+                color = Color.Gray
             )
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            Button(
-                onClick = { }
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Full Name") },
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            OutlinedTextField(
+                value = age,
+                onValueChange = { age = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Age") },
+                singleLine = true
+            )
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = {
+                    expanded = !expanded
+                }
             ) {
-                Text("Capture Face")
+
+                OutlinedTextField(
+                    value = selectedGender,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = {
+                        Text("Gender")
+                    },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth(),
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded)
+                    }
+                )
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = {
+                        expanded = false
+                    }
+                ) {
+
+                    genders.forEach { gender ->
+
+                        DropdownMenuItem(
+                            text = {
+                                Text(gender)
+                            },
+                            onClick = {
+                                selectedGender = gender
+                                expanded = false
+                            }
+                        )
+
+                    }
+
+                }
+
             }
+
+            Spacer(modifier = Modifier.height(35.dp))
+
+            Button(
+                onClick = {
+
+                    // Temporary simulation
+                    faceCaptured = true
+                    userId = "NS20260001"
+
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
+            ) {
+
+                Text(
+                    text = if (faceCaptured) "Face Captured ✓" else "Capture Face",
+                    fontSize = 18.sp
+                )
+
+            }
+
+            if (faceCaptured) {
+
+                Spacer(modifier = Modifier.height(25.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFE3F2FD)
+                    )
+                ) {
+
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+
+                        Text(
+                            text = "Generated User ID",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.DarkGray
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = userId,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1976D2)
+                        )
+
+                    }
+
+                }
+
+            }
+
+            Spacer(modifier = Modifier.height(25.dp))
+
+            Button(
+                onClick = {
+                    navController.navigate("questionnaire")
+                },
+                enabled = faceCaptured,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
+            ) {
+
+                Text(
+                    text = "Continue",
+                    fontSize = 18.sp
+                )
+
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
+
         }
+
     }
+
 }
