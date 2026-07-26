@@ -42,7 +42,6 @@ fun FaceRegistrationScreen(navController: NavController) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
-
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -87,18 +86,14 @@ fun FaceRegistrationScreen(navController: NavController) {
 
             ExposedDropdownMenuBox(
                 expanded = expanded,
-                onExpandedChange = {
-                    expanded = !expanded
-                }
+                onExpandedChange = { expanded = !expanded }
             ) {
 
                 OutlinedTextField(
                     value = selectedGender,
                     onValueChange = {},
                     readOnly = true,
-                    label = {
-                        Text("Gender")
-                    },
+                    label = { Text("Gender") },
                     modifier = Modifier
                         .menuAnchor()
                         .fillMaxWidth(),
@@ -117,9 +112,7 @@ fun FaceRegistrationScreen(navController: NavController) {
                     genders.forEach { gender ->
 
                         DropdownMenuItem(
-                            text = {
-                                Text(gender)
-                            },
+                            text = { Text(gender) },
                             onClick = {
                                 selectedGender = gender
                                 expanded = false
@@ -127,19 +120,20 @@ fun FaceRegistrationScreen(navController: NavController) {
                         )
 
                     }
-
                 }
-
             }
 
-            Spacer(modifier = Modifier.height(35.dp))
+            Spacer(modifier = Modifier.height(30.dp))
 
+            // Capture Face Button
             Button(
                 onClick = {
 
                     // Temporary simulation
                     faceCaptured = true
-                    userId = "NS20260001"
+
+                    // Generate temporary ID
+                    userId = "NS${System.currentTimeMillis().toString().takeLast(6)}"
 
                 },
                 modifier = Modifier
@@ -192,6 +186,7 @@ fun FaceRegistrationScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(25.dp))
 
+            // Continue Button
             Button(
                 onClick = {
                     navController.navigate("questionnaire")
