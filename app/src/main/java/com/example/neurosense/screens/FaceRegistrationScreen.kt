@@ -2,13 +2,20 @@ package com.example.neurosense.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -31,6 +38,9 @@ fun FaceRegistrationScreen(navController: NavController) {
 
     var faceCaptured by remember { mutableStateOf(false) }
     var userId by remember { mutableStateOf("") }
+
+    val ageFocusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -64,29 +74,56 @@ fun FaceRegistrationScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(30.dp))
 
+            // Name
+
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Full Name") },
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = {
+                        ageFocusRequester.requestFocus()
+                    }
+                )
             )
 
             Spacer(modifier = Modifier.height(18.dp))
+
+            // Age
 
             OutlinedTextField(
                 value = age,
                 onValueChange = { age = it },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(ageFocusRequester),
                 label = { Text("Age") },
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                    }
+                )
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
+            // Gender
+
             ExposedDropdownMenuBox(
                 expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
+                onExpandedChange = {
+                    expanded = !expanded
+                }
             ) {
 
                 OutlinedTextField(
@@ -112,7 +149,9 @@ fun FaceRegistrationScreen(navController: NavController) {
                     genders.forEach { gender ->
 
                         DropdownMenuItem(
-                            text = { Text(gender) },
+                            text = {
+                                Text(gender)
+                            },
                             onClick = {
                                 selectedGender = gender
                                 expanded = false
@@ -120,20 +159,24 @@ fun FaceRegistrationScreen(navController: NavController) {
                         )
 
                     }
+
                 }
+
             }
 
             Spacer(modifier = Modifier.height(30.dp))
 
             // Capture Face Button
+
             Button(
                 onClick = {
 
-                    // Temporary simulation
+                    // Temporary Simulation
+
                     faceCaptured = true
 
-                    // Generate temporary ID
-                    userId = "NS${System.currentTimeMillis().toString().takeLast(6)}"
+                    userId =
+                        "NS${System.currentTimeMillis().toString().takeLast(6)}"
 
                 },
                 modifier = Modifier
@@ -142,11 +185,16 @@ fun FaceRegistrationScreen(navController: NavController) {
             ) {
 
                 Text(
-                    text = if (faceCaptured) "Face Captured ✓" else "Capture Face",
+                    text = if (faceCaptured)
+                        "Face Captured ✓"
+                    else
+                        "Capture Face",
                     fontSize = 18.sp
                 )
 
             }
+
+            // Show User ID only after capture
 
             if (faceCaptured) {
 
@@ -187,6 +235,7 @@ fun FaceRegistrationScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(25.dp))
 
             // Continue Button
+
             Button(
                 onClick = {
                     navController.navigate("questionnaire")
