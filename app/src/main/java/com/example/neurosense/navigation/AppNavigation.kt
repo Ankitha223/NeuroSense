@@ -35,7 +35,7 @@ fun AppNavigation() {
         composable("questionnaire") {
             QuestionnaireScreen(navController)
         }
-        composable("camera") {
+        composable("camera_capture") {
             CameraCaptureScreen(navController)
         }
     }

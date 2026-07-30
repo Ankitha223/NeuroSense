@@ -170,14 +170,7 @@ fun FaceRegistrationScreen(navController: NavController) {
 
             Button(
                 onClick = {
-
-                    // Temporary Simulation
-
-                    faceCaptured = true
-
-                    userId =
-                        "NS${System.currentTimeMillis().toString().takeLast(6)}"
-
+                    navController.navigate("camera_capture")
                 },
                 modifier = Modifier
                     .fillMaxWidth()
