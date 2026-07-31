@@ -19,13 +19,20 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.text.input.KeyboardCapitalization
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FaceRegistrationScreen(navController: NavController) {
+fun FaceRegistrationScreen(
+    navController: NavController
+) {
 
     var name by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
+
+    var nameError by remember { mutableStateOf("") }
+    var ageError by remember { mutableStateOf("") }
+    var genderError by remember { mutableStateOf("") }
 
     var expanded by remember { mutableStateOf(false) }
     var selectedGender by remember { mutableStateOf("Select Gender") }
@@ -40,6 +47,9 @@ fun FaceRegistrationScreen(navController: NavController) {
     var userId by remember { mutableStateOf("") }
 
     val ageFocusRequester = remember { FocusRequester() }
+    val genderFocusRequester = remember { FocusRequester() }
+    val captureButtonFocusRequester = remember { FocusRequester() }
+
     val focusManager = LocalFocusManager.current
 
     Surface(
@@ -52,6 +62,7 @@ fun FaceRegistrationScreen(navController: NavController) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
+
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -74,51 +85,144 @@ fun FaceRegistrationScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            // Name
-
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = { input ->
+
+                    val filtered = input.filter {
+                        it.isLetter() || it.isWhitespace()
+                    }
+
+                    val cleaned = filtered.replace(Regex("\\s+"), " ")
+
+                    name = cleaned.replaceFirstChar {
+                        if (it.isLowerCase())
+                            it.titlecase()
+                        else
+                            it.toString()
+                    }
+
+                    nameError =
+                        when {
+                            name.isBlank() ->
+                                "Name cannot be empty."
+
+                            name.length < 2 ->
+                                "Name should contain at least 2 letters."
+
+                            else -> ""
+                        }
+
+                },
+
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Full Name") },
+
+                label = {
+                    Text("Full Name")
+                },
+
                 singleLine = true,
+
+                isError = nameError.isNotEmpty(),
+
                 keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next
                 ),
+
                 keyboardActions = KeyboardActions(
                     onNext = {
                         ageFocusRequester.requestFocus()
                     }
                 )
+
             )
+
+            if (nameError.isNotEmpty()) {
+
+                Text(
+                    text = nameError,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+            }
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Age
-
             OutlinedTextField(
+
                 value = age,
-                onValueChange = { age = it },
+
+                onValueChange = { input ->
+
+                    val filtered = input.filter {
+                        it.isDigit()
+                    }
+
+                    if (filtered.length <= 2) {
+                        age = filtered
+                    }
+
+                    ageError =
+                        when {
+
+                            age.isBlank() ->
+                                "Age cannot be empty."
+
+                            age.toIntOrNull() == null ->
+                                "Please enter a valid age (1–99)."
+
+                            age.toInt() !in 1..99 ->
+                                "Please enter a valid age (1–99)."
+
+                            else -> ""
+
+                        }
+
+                },
+
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(ageFocusRequester),
-                label = { Text("Age") },
+
+                label = {
+                    Text("Age")
+                },
+
                 singleLine = true,
+
+                isError = ageError.isNotEmpty(),
+
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Done
+                    imeAction = ImeAction.Next
                 ),
+
                 keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
+                    onNext = {
+
+                        genderFocusRequester.requestFocus()
+                        expanded = true
+
                     }
                 )
+
             )
 
+            if (ageError.isNotEmpty()) {
+
+                Text(
+                    text = ageError,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+            }
+
             Spacer(modifier = Modifier.height(18.dp))
-
-            // Gender
-
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = {
@@ -127,13 +231,30 @@ fun FaceRegistrationScreen(navController: NavController) {
             ) {
 
                 OutlinedTextField(
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Next
+                    ),
+
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            captureButtonFocusRequester.requestFocus()
+                        }
+                    ),
                     value = selectedGender,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Gender") },
+
                     modifier = Modifier
                         .menuAnchor()
+                        .focusRequester(genderFocusRequester)
                         .fillMaxWidth(),
+
+                    label = {
+                        Text("Gender")
+                    },
+
+                    isError = genderError.isNotEmpty(),
+
                     trailingIcon = {
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded)
                     }
@@ -152,9 +273,16 @@ fun FaceRegistrationScreen(navController: NavController) {
                             text = {
                                 Text(gender)
                             },
+
                             onClick = {
+
                                 selectedGender = gender
+                                genderError = ""
+
                                 expanded = false
+
+                                captureButtonFocusRequester.requestFocus()
+
                             }
                         )
 
@@ -164,15 +292,36 @@ fun FaceRegistrationScreen(navController: NavController) {
 
             }
 
+            if (genderError.isNotEmpty()) {
+
+                Text(
+                    text = genderError,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+            }
+
             Spacer(modifier = Modifier.height(30.dp))
 
+            // Validation before enabling Capture Face
+            val formValid =
+                nameError.isEmpty() &&
+                        ageError.isEmpty() &&
+                        name.isNotBlank() &&
+                        age.isNotBlank() &&
+                        selectedGender != "Select Gender"
             // Capture Face Button
-
             Button(
                 onClick = {
                     navController.navigate("camera_capture")
                 },
+
+                enabled = formValid,
+
                 modifier = Modifier
+                    .focusRequester(captureButtonFocusRequester)
                     .fillMaxWidth()
                     .height(55.dp)
             ) {
@@ -186,8 +335,6 @@ fun FaceRegistrationScreen(navController: NavController) {
                 )
 
             }
-
-            // Show User ID only after capture
 
             if (faceCaptured) {
 
@@ -227,16 +374,33 @@ fun FaceRegistrationScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(25.dp))
 
-            // Continue Button
-
             Button(
+
                 onClick = {
+
+                    if (selectedGender == "Select Gender") {
+
+                        genderError = "Please select your gender."
+                        return@Button
+
+                    }
+
+                    if (!faceCaptured) {
+
+                        return@Button
+
+                    }
+
                     navController.navigate("questionnaire")
+
                 },
+
                 enabled = faceCaptured,
+
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(55.dp)
+
             ) {
 
                 Text(
