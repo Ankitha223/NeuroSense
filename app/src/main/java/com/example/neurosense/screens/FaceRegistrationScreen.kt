@@ -15,27 +15,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.ui.text.input.KeyboardCapitalization
+import com.example.neurosense.viewmodel.RegistrationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FaceRegistrationScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: RegistrationViewModel
 ) {
-
-    var name by remember { mutableStateOf("") }
-    var age by remember { mutableStateOf("") }
 
     var nameError by remember { mutableStateOf("") }
     var ageError by remember { mutableStateOf("") }
     var genderError by remember { mutableStateOf("") }
 
     var expanded by remember { mutableStateOf(false) }
-    var selectedGender by remember { mutableStateOf("Select Gender") }
 
     val genders = listOf(
         "Male",
@@ -43,14 +41,18 @@ fun FaceRegistrationScreen(
         "Other"
     )
 
-    var faceCaptured by remember { mutableStateOf(false) }
-    var userId by remember { mutableStateOf("") }
-
     val ageFocusRequester = remember { FocusRequester() }
     val genderFocusRequester = remember { FocusRequester() }
     val captureButtonFocusRequester = remember { FocusRequester() }
 
     val focusManager = LocalFocusManager.current
+
+    val formValid =
+        nameError.isEmpty() &&
+                ageError.isEmpty() &&
+                viewModel.name.isNotBlank() &&
+                viewModel.age.isNotBlank() &&
+                viewModel.gender != "Select Gender"
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -58,12 +60,14 @@ fun FaceRegistrationScreen(
     ) {
 
         Column(
+
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
 
             horizontalAlignment = Alignment.CenterHorizontally
+
         ) {
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -84,9 +88,10 @@ fun FaceRegistrationScreen(
             )
 
             Spacer(modifier = Modifier.height(30.dp))
-
             OutlinedTextField(
-                value = name,
+
+                value = viewModel.name,
+
                 onValueChange = { input ->
 
                     val filtered = input.filter {
@@ -95,7 +100,7 @@ fun FaceRegistrationScreen(
 
                     val cleaned = filtered.replace(Regex("\\s+"), " ")
 
-                    name = cleaned.replaceFirstChar {
+                    viewModel.name = cleaned.replaceFirstChar {
                         if (it.isLowerCase())
                             it.titlecase()
                         else
@@ -104,13 +109,15 @@ fun FaceRegistrationScreen(
 
                     nameError =
                         when {
-                            name.isBlank() ->
+
+                            viewModel.name.isBlank() ->
                                 "Name cannot be empty."
 
-                            name.length < 2 ->
+                            viewModel.name.length < 2 ->
                                 "Name should contain at least 2 letters."
 
                             else -> ""
+
                         }
 
                 },
@@ -153,7 +160,7 @@ fun FaceRegistrationScreen(
 
             OutlinedTextField(
 
-                value = age,
+                value = viewModel.age,
 
                 onValueChange = { input ->
 
@@ -161,21 +168,20 @@ fun FaceRegistrationScreen(
                         it.isDigit()
                     }
 
-                    if (filtered.length <= 2) {
-                        age = filtered
-                    }
+                    if (filtered.length <= 2)
+                        viewModel.age = filtered
 
                     ageError =
                         when {
 
-                            age.isBlank() ->
+                            viewModel.age.isBlank() ->
                                 "Age cannot be empty."
 
-                            age.toIntOrNull() == null ->
-                                "Please enter a valid age (1–99)."
+                            viewModel.age.toIntOrNull() == null ->
+                                "Please enter a valid age."
 
-                            age.toInt() !in 1..99 ->
-                                "Please enter a valid age (1–99)."
+                            viewModel.age.toInt() !in 1..99 ->
+                                "Age must be between 1 and 99."
 
                             else -> ""
 
@@ -204,6 +210,7 @@ fun FaceRegistrationScreen(
                     onNext = {
 
                         genderFocusRequester.requestFocus()
+
                         expanded = true
 
                     }
@@ -223,25 +230,25 @@ fun FaceRegistrationScreen(
             }
 
             Spacer(modifier = Modifier.height(18.dp))
+
             ExposedDropdownMenuBox(
+
                 expanded = expanded,
+
                 onExpandedChange = {
+
                     expanded = !expanded
+
                 }
+
             ) {
 
                 OutlinedTextField(
-                    keyboardOptions = KeyboardOptions(
-                        imeAction = ImeAction.Next
-                    ),
 
-                    keyboardActions = KeyboardActions(
-                        onNext = {
-                            captureButtonFocusRequester.requestFocus()
-                        }
-                    ),
-                    value = selectedGender,
+                    value = viewModel.gender,
+
                     onValueChange = {},
+
                     readOnly = true,
 
                     modifier = Modifier
@@ -256,27 +263,39 @@ fun FaceRegistrationScreen(
                     isError = genderError.isNotEmpty(),
 
                     trailingIcon = {
+
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded)
+
                     }
+
                 )
 
                 ExposedDropdownMenu(
+
                     expanded = expanded,
+
                     onDismissRequest = {
+
                         expanded = false
+
                     }
+
                 ) {
 
                     genders.forEach { gender ->
 
                         DropdownMenuItem(
+
                             text = {
+
                                 Text(gender)
+
                             },
 
                             onClick = {
 
-                                selectedGender = gender
+                                viewModel.gender = gender
+
                                 genderError = ""
 
                                 expanded = false
@@ -284,6 +303,7 @@ fun FaceRegistrationScreen(
                                 captureButtonFocusRequester.requestFocus()
 
                             }
+
                         )
 
                     }
@@ -295,27 +315,26 @@ fun FaceRegistrationScreen(
             if (genderError.isNotEmpty()) {
 
                 Text(
+
                     text = genderError,
+
                     color = MaterialTheme.colorScheme.error,
+
                     style = MaterialTheme.typography.bodySmall,
+
                     modifier = Modifier.fillMaxWidth()
+
                 )
 
             }
 
             Spacer(modifier = Modifier.height(30.dp))
-
-            // Validation before enabling Capture Face
-            val formValid =
-                nameError.isEmpty() &&
-                        ageError.isEmpty() &&
-                        name.isNotBlank() &&
-                        age.isNotBlank() &&
-                        selectedGender != "Select Gender"
-            // Capture Face Button
             Button(
+
                 onClick = {
+
                     navController.navigate("camera_capture")
+
                 },
 
                 enabled = formValid,
@@ -324,27 +343,35 @@ fun FaceRegistrationScreen(
                     .focusRequester(captureButtonFocusRequester)
                     .fillMaxWidth()
                     .height(55.dp)
+
             ) {
 
                 Text(
-                    text = if (faceCaptured)
-                        "Face Captured ✓"
-                    else
-                        "Capture Face",
+
+                    text =
+                        if (viewModel.faceCaptured)
+                            "Face Captured ✓"
+                        else
+                            "Capture Face",
+
                     fontSize = 18.sp
+
                 )
 
             }
 
-            if (faceCaptured) {
+            if (viewModel.faceCaptured) {
 
                 Spacer(modifier = Modifier.height(25.dp))
 
                 Card(
+
                     modifier = Modifier.fillMaxWidth(),
+
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xFFE3F2FD)
                     )
+
                 ) {
 
                     Column(
@@ -360,7 +387,7 @@ fun FaceRegistrationScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = userId,
+                            text = viewModel.userId,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1976D2)
@@ -378,14 +405,9 @@ fun FaceRegistrationScreen(
 
                 onClick = {
 
-                    if (selectedGender == "Select Gender") {
+                    if (viewModel.gender == "Select Gender") {
 
                         genderError = "Please select your gender."
-                        return@Button
-
-                    }
-
-                    if (!faceCaptured) {
 
                         return@Button
 
@@ -395,7 +417,7 @@ fun FaceRegistrationScreen(
 
                 },
 
-                enabled = faceCaptured,
+                enabled = viewModel.faceCaptured,
 
                 modifier = Modifier
                     .fillMaxWidth()
@@ -404,8 +426,11 @@ fun FaceRegistrationScreen(
             ) {
 
                 Text(
+
                     text = "Continue",
+
                     fontSize = 18.sp
+
                 )
 
             }

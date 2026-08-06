@@ -64,6 +64,7 @@ dependencies {
     implementation("androidx.camera:camera-camera2:$cameraxVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.2")
 
 // Face Detection (ML Kit)
     implementation("com.google.mlkit:face-detection:16.1.7")
