@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.example.neurosense.navigation.AppNavigation
 import com.example.neurosense.ui.theme.NeuroSenseTheme
-
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -16,5 +15,6 @@ class MainActivity : ComponentActivity() {
                 AppNavigation()
             }
         }
+
     }
 }

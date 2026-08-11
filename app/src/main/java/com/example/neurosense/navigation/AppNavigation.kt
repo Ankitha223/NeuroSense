@@ -12,7 +12,8 @@ import com.example.neurosense.screens.LoginChoiceScreen
 import com.example.neurosense.screens.QuestionnaireScreen
 import com.example.neurosense.screens.SplashScreen
 import com.example.neurosense.viewmodel.RegistrationViewModel
-
+import com.example.neurosense.screens.ExistingUserScreen
+import com.example.neurosense.screens.ExistingUserCameraScreen
 @Composable
 fun AppNavigation() {
 
@@ -32,6 +33,18 @@ fun AppNavigation() {
 
             SplashScreen(navController)
 
+        }
+        composable("existing_user_camera") {
+
+            ExistingUserCameraScreen(
+                navController = navController
+            )
+        }
+        composable("existing_user") {
+
+            ExistingUserScreen(
+                navController = navController
+            )
         }
 
         composable("login_choice") {
@@ -62,6 +75,9 @@ fun AppNavigation() {
 
             )
 
+        }
+        composable("existing_user") {
+            ExistingUserScreen(navController)
         }
 
         composable("questionnaire") {

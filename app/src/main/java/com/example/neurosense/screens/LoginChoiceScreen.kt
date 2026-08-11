@@ -51,7 +51,7 @@ fun LoginChoiceScreen(navController: NavController) {
             // Existing User Button
             Button(
                 onClick = {
-                    // Face Authentication will be added in the next step
+                    navController.navigate("existing_user")
                 },
                 modifier = Modifier
                     .fillMaxWidth()

@@ -10,10 +10,10 @@ class RegistrationViewModel : ViewModel() {
     var name by mutableStateOf("")
     var age by mutableStateOf("")
     var gender by mutableStateOf("Select Gender")
-    var faceImagePath by mutableStateOf("")
 
     var faceCaptured by mutableStateOf(false)
 
     var userId by mutableStateOf("")
+    var faceImagePath by mutableStateOf("")
 
 }
