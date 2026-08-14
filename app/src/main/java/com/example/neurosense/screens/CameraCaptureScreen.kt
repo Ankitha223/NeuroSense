@@ -4,15 +4,11 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.util.Log
-
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.view.PreviewView
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,18 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import androidx.core.content.ContextCompat
-
 import androidx.navigation.NavController
-
 import com.example.neurosense.camera.CameraPreview
 import com.example.neurosense.data.UserStorage
+import com.example.neurosense.recognition.FaceImageProcessor
 import com.example.neurosense.recognition.FaceNetRecognizer
 import com.example.neurosense.viewmodel.RegistrationViewModel
-
 import java.io.File
-
+import kotlinx.coroutines.launch
 
 @Composable
 fun CameraCaptureScreen(
@@ -41,13 +34,9 @@ fun CameraCaptureScreen(
 ) {
 
     val context = LocalContext.current
-
-    // ==================================================
-    // CAMERA PERMISSION
-    // ==================================================
+    val scope = rememberCoroutineScope()
 
     var hasCameraPermission by remember {
-
         mutableStateOf(
             ContextCompat.checkSelfPermission(
                 context,
@@ -55,10 +44,6 @@ fun CameraCaptureScreen(
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
-
-    // ==================================================
-    // IMAGE CAPTURE
-    // ==================================================
 
     var imageCapture by remember {
         mutableStateOf<ImageCapture?>(null)
@@ -68,66 +53,66 @@ fun CameraCaptureScreen(
         mutableStateOf(false)
     }
 
-    // ==================================================
-    // CAMERA PERMISSION LAUNCHER
-    // ==================================================
+    var message by remember {
+        mutableStateOf("")
+    }
 
-    val launcher =
+    val permissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { granted ->
-
             hasCameraPermission = granted
+
+            if (!granted) {
+                message = "Camera permission is required."
+            }
         }
 
     LaunchedEffect(Unit) {
 
         if (!hasCameraPermission) {
-
-            launcher.launch(
+            permissionLauncher.launch(
                 Manifest.permission.CAMERA
             )
         }
     }
 
-    // ==================================================
-    // CAMERA PREVIEW
-    // ==================================================
-
     val previewView = remember {
         PreviewView(context)
     }
 
-    // ==================================================
-    // FACENET RECOGNIZER
-    // ==================================================
+    val faceProcessor = remember {
+        FaceImageProcessor()
+    }
 
     val faceNetRecognizer = remember {
         FaceNetRecognizer(context)
     }
 
-    // Close FaceNet when this screen is destroyed
     DisposableEffect(Unit) {
 
         onDispose {
+            faceProcessor.close()
             faceNetRecognizer.close()
         }
     }
-
-    // ==================================================
-    // UI
-    // ==================================================
 
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
 
-        // ==================================================
-        // CAMERA
-        // ==================================================
+        Text(
+            text = "Register Face",
+            fontSize = 24.sp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        )
 
         Box(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
 
@@ -136,7 +121,6 @@ fun CameraCaptureScreen(
                 CameraPreview(
                     previewView = previewView,
                     modifier = Modifier.fillMaxSize(),
-
                     onImageCaptureReady = {
                         imageCapture = it
                     }
@@ -145,34 +129,39 @@ fun CameraCaptureScreen(
             } else {
 
                 Text(
-                    text = "Waiting for camera permission...",
+                    text = "Camera permission required",
                     fontSize = 18.sp
                 )
             }
         }
 
-        // ==================================================
-        // CAPTURE BUTTON
-        // ==================================================
+        if (message.isNotEmpty()) {
+
+            Text(
+                text = message,
+                fontSize = 16.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
+        }
 
         Button(
-
             onClick = {
 
                 val capture = imageCapture
 
                 if (capture == null) {
+
+                    message = "Camera is not ready."
+
                     return@Button
                 }
 
                 isCapturing = true
-
-                // ==================================================
-                // GENERATE USER ID
-                // ==================================================
+                message = "Capturing face..."
 
                 val userId =
-
                     if (viewModel.userId.isNotEmpty()) {
 
                         viewModel.userId
@@ -188,205 +177,207 @@ fun CameraCaptureScreen(
 
                 viewModel.userId = userId
 
-                // ==================================================
-                // FACE IMAGE FILE
-                // ==================================================
-
                 val file = File(
                     context.filesDir,
                     "face_$userId.jpg"
                 )
 
                 val outputOptions =
-                    OutputFileOptions
+                    ImageCapture.OutputFileOptions
                         .Builder(file)
                         .build()
 
-                // ==================================================
-                // TAKE PHOTO
-                // ==================================================
-
                 capture.takePicture(
-
                     outputOptions,
-
                     ContextCompat.getMainExecutor(context),
 
                     object :
                         ImageCapture.OnImageSavedCallback {
-
-                        // ==================================================
-                        // PHOTO SAVED SUCCESSFULLY
-                        // ==================================================
 
                         override fun onImageSaved(
                             outputFileResults:
                             ImageCapture.OutputFileResults
                         ) {
 
-                            try {
+                            scope.launch {
 
-                                // ==================================================
-                                // 1. SAVE IMAGE PATH
-                                // ==================================================
+                                try {
 
-                                viewModel.faceImagePath =
-                                    file.absolutePath
-
-                                // ==================================================
-                                // 2. LOAD IMAGE
-                                // ==================================================
-
-                                val bitmap =
-                                    BitmapFactory.decodeFile(
-                                        file.absolutePath
+                                    Log.d(
+                                        "FaceRegistration",
+                                        "Image captured."
                                     )
 
-                                if (bitmap == null) {
+                                    val bitmap =
+                                        BitmapFactory.decodeFile(
+                                            file.absolutePath
+                                        )
 
-                                    Log.e(
-                                        "FaceNetTest",
-                                        "Could not load captured image"
+                                    if (bitmap == null) {
+
+                                        message =
+                                            "Could not read captured image."
+
+                                        isCapturing = false
+
+                                        return@launch
+                                    }
+
+                                    message =
+                                        "Detecting face..."
+
+                                    /*
+                                     * Detect exactly one face
+                                     * and crop it.
+                                     */
+                                    val croppedFace =
+                                        faceProcessor.cropFace(
+                                            bitmap
+                                        )
+
+                                    if (croppedFace == null) {
+
+                                        message =
+                                            "Face not detected. Show exactly one face."
+
+                                        Log.d(
+                                            "FaceRegistration",
+                                            "Face detection failed."
+                                        )
+
+                                        isCapturing = false
+
+                                        return@launch
+                                    }
+
+                                    Log.d(
+                                        "FaceRegistration",
+                                        "Face detected successfully."
                                     )
 
-                                    isCapturing = false
-                                    return
-                                }
+                                    message =
+                                        "Generating FaceNet embedding..."
 
-                                // ==================================================
-                                // 3. GENERATE FACENET EMBEDDING
-                                // ==================================================
+                                    /*
+                                     * Generate embedding
+                                     * ONLY from cropped face.
+                                     */
+                                    val embedding =
+                                        faceNetRecognizer.getEmbedding(
+                                            croppedFace
+                                        )
 
-                                Log.d(
-                                    "FaceNetTest",
-                                    "Generating FaceNet embedding..."
-                                )
-
-                                val embedding =
-                                    faceNetRecognizer
-                                        .getEmbedding(bitmap)
-
-                                // ==================================================
-                                // 4. CHECK EMBEDDING
-                                // ==================================================
-
-                                Log.d(
-                                    "FaceNetTest",
-                                    "FaceNet embedding generated!"
-                                )
-
-                                Log.d(
-                                    "FaceNetTest",
-                                    "Embedding size: ${embedding.size}"
-                                )
-
-                                if (embedding.size != 128) {
-
-                                    Log.e(
-                                        "FaceNetTest",
-                                        "Invalid embedding size: ${embedding.size}"
+                                    Log.d(
+                                        "FaceRegistration",
+                                        "Embedding generated."
                                     )
 
-                                    isCapturing = false
-                                    return
-                                }
+                                    Log.d(
+                                        "FaceRegistration",
+                                        "Embedding size: ${embedding.size}"
+                                    )
 
-                                // ==================================================
-                                // 5. SAVE USER + EMBEDDING
-                                // ==================================================
+                                    if (embedding.size != 128) {
 
-                                val userStorage =
-                                    UserStorage(context)
+                                        message =
+                                            "Invalid FaceNet embedding."
 
-                                userStorage.saveUser(
+                                        isCapturing = false
 
-                                    userId =
-                                        viewModel.userId,
+                                        return@launch
+                                    }
 
-                                    name =
-                                        viewModel.name,
+                                    val userStorage =
+                                        UserStorage(context)
 
-                                    age =
-                                        viewModel.age,
+                                    /*
+                                     * Save user information.
+                                     */
+                                    userStorage.saveUser(
+                                        userId =
+                                            viewModel.userId,
 
-                                    gender =
-                                        viewModel.gender,
+                                        name =
+                                            viewModel.name,
 
-                                    faceImagePath =
-                                        viewModel.faceImagePath,
+                                        age =
+                                            viewModel.age,
 
-                                    faceEmbedding =
+                                        gender =
+                                            viewModel.gender,
+
+                                        faceImagePath =
+                                            file.absolutePath
+                                    )
+
+                                    /*
+                                     * Save 128-dimensional
+                                     * FaceNet embedding.
+                                     */
+                                    userStorage.saveFaceEmbedding(
                                         embedding
-                                )
+                                    )
 
-                                // ==================================================
-                                // 6. READ SAVED EMBEDDING
-                                // ==================================================
+                                    val savedEmbedding =
+                                        userStorage
+                                            .getFaceEmbedding()
 
-                                val savedEmbedding = userStorage.getFaceEmbedding()
+                                    Log.d(
+                                        "FaceRegistration",
+                                        "Saved embedding size: ${
+                                            savedEmbedding?.size ?: 0
+                                        }"
+                                    )
 
-                                if (savedEmbedding == null) {
+                                    if (
+                                        savedEmbedding == null ||
+                                        savedEmbedding.size != 128
+                                    ) {
 
-                                    Log.e(
-                                        "FaceNetTest",
-                                        "ERROR: Face embedding was not saved."
+                                        message =
+                                            "Failed to save face embedding."
+
+                                        isCapturing = false
+
+                                        return@launch
+                                    }
+
+                                    viewModel.faceImagePath =
+                                        file.absolutePath
+
+                                    viewModel.faceCaptured =
+                                        true
+
+                                    message =
+                                        "Face registered successfully!"
+
+                                    Log.d(
+                                        "FaceRegistration",
+                                        "SUCCESS: Face registered."
                                     )
 
                                     isCapturing = false
-                                    return
 
-                                }
+                                    /*
+                                     * Return to registration screen.
+                                     */
+                                    navController.popBackStack()
 
-                                Log.d(
-                                    "FaceNetTest",
-                                    "Saved embedding size: ${savedEmbedding.size}"
-                                )
-
-                                if (savedEmbedding.size != 128) {
-
-                                    Log.e(
-                                        "FaceNetTest",
-                                        "ERROR: Invalid saved embedding size."
-                                    )
+                                } catch (e: Exception) {
 
                                     isCapturing = false
-                                    return
+
+                                    message =
+                                        "Face registration failed."
+
+                                    Log.e(
+                                        "FaceRegistration",
+                                        "Error during registration",
+                                        e
+                                    )
                                 }
-
-                                Log.d(
-                                    "FaceNetTest",
-                                    "SUCCESS: Face embedding saved!"
-                                )
-
-                                // ==================================================
-                                // 8. MARK FACE AS CAPTURED
-                                // ==================================================
-
-                                viewModel.faceCaptured = true
-
-                                isCapturing = false
-
-                                // ==================================================
-                                // 9. RETURN TO REGISTRATION
-                                // ==================================================
-
-                                navController.popBackStack()
-
-                            } catch (e: Exception) {
-
-                                isCapturing = false
-
-                                Log.e(
-                                    "FaceNetTest",
-                                    "FaceNet processing failed",
-                                    e
-                                )
                             }
                         }
-
-                        // ==================================================
-                        // PHOTO CAPTURE ERROR
-                        // ==================================================
 
                         override fun onError(
                             exception: ImageCaptureException
@@ -394,9 +385,12 @@ fun CameraCaptureScreen(
 
                             isCapturing = false
 
+                            message =
+                                "Failed to capture image."
+
                             Log.e(
-                                "FaceNetTest",
-                                "Image capture failed",
+                                "FaceRegistration",
+                                "Camera capture failed",
                                 exception
                             )
                         }
@@ -404,20 +398,15 @@ fun CameraCaptureScreen(
                 )
             },
 
-            // ==================================================
-            // BUTTON ENABLE CONDITION
-            // ==================================================
-
             enabled =
                 hasCameraPermission &&
                         imageCapture != null &&
                         !isCapturing,
 
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(55.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .height(55.dp)
 
         ) {
 
@@ -426,7 +415,7 @@ fun CameraCaptureScreen(
                     if (isCapturing)
                         "Processing..."
                     else
-                        "Capture",
+                        "Capture Face",
 
                 fontSize = 18.sp
             )

@@ -4,15 +4,12 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.util.Log
-
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.view.PreviewView
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,16 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import androidx.core.content.ContextCompat
-
 import androidx.navigation.NavController
-
 import com.example.neurosense.camera.CameraPreview
 import com.example.neurosense.data.UserStorage
+import com.example.neurosense.recognition.FaceImageProcessor
 import com.example.neurosense.recognition.FaceNetRecognizer
-
 import java.io.File
+import kotlinx.coroutines.launch
 
 @Composable
 fun ExistingUserScreen(
@@ -38,6 +33,11 @@ fun ExistingUserScreen(
 ) {
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // --------------------------------------------------
+    // CAMERA PERMISSION
+    // --------------------------------------------------
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -47,6 +47,10 @@ fun ExistingUserScreen(
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
+
+    // --------------------------------------------------
+    // CAMERA
+    // --------------------------------------------------
 
     var imageCapture by remember {
         mutableStateOf<ImageCapture?>(null)
@@ -66,6 +70,11 @@ fun ExistingUserScreen(
         ) { granted ->
 
             hasCameraPermission = granted
+
+            if (!granted) {
+                verificationMessage =
+                    "Camera permission is required."
+            }
         }
 
     LaunchedEffect(Unit) {
@@ -82,29 +91,46 @@ fun ExistingUserScreen(
         PreviewView(context)
     }
 
-    /*
-     * FaceNet recognizer
-     */
+    // --------------------------------------------------
+    // FACENET
+    // --------------------------------------------------
+
     val faceNetRecognizer = remember {
         FaceNetRecognizer(context)
     }
 
-    /*
-     * User storage
-     */
+    // --------------------------------------------------
+    // FACE DETECTOR / CROPPER
+    // --------------------------------------------------
+
+    val faceProcessor = remember {
+        FaceImageProcessor()
+    }
+
+    // --------------------------------------------------
+    // USER STORAGE
+    // --------------------------------------------------
+
     val userStorage = remember {
         UserStorage(context)
     }
 
-    /*
-     * Close FaceNet when screen is destroyed.
-     */
+    // --------------------------------------------------
+    // RELEASE RESOURCES
+    // --------------------------------------------------
+
     DisposableEffect(Unit) {
 
         onDispose {
+
             faceNetRecognizer.close()
+            faceProcessor.close()
         }
     }
+
+    // --------------------------------------------------
+    // UI
+    // --------------------------------------------------
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -118,6 +144,10 @@ fun ExistingUserScreen(
                 .padding(16.dp)
         )
 
+        // --------------------------------------------------
+        // CAMERA PREVIEW
+        // --------------------------------------------------
+
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -130,7 +160,6 @@ fun ExistingUserScreen(
                 CameraPreview(
                     previewView = previewView,
                     modifier = Modifier.fillMaxSize(),
-
                     onImageCaptureReady = {
                         imageCapture = it
                     }
@@ -145,9 +174,10 @@ fun ExistingUserScreen(
             }
         }
 
-        /*
-         * Verification result
-         */
+        // --------------------------------------------------
+        // MESSAGE
+        // --------------------------------------------------
+
         if (verificationMessage.isNotEmpty()) {
 
             Text(
@@ -162,21 +192,37 @@ fun ExistingUserScreen(
             )
         }
 
+        // --------------------------------------------------
+        // VERIFY BUTTON
+        // --------------------------------------------------
+
         Button(
+
             onClick = {
 
                 val capture = imageCapture
 
                 if (capture == null) {
+
+                    verificationMessage =
+                        "Camera is not ready."
+
+                    return@Button
+                }
+
+                if (isVerifying) {
                     return@Button
                 }
 
                 isVerifying = true
-                verificationMessage = "Verifying face..."
 
-                /*
-                 * Temporary file for verification image.
-                 */
+                verificationMessage =
+                    "Capturing face..."
+
+                // --------------------------------------------------
+                // TEMPORARY IMAGE FILE
+                // --------------------------------------------------
+
                 val file = File(
                     context.cacheDir,
                     "verification_face.jpg"
@@ -191,7 +237,9 @@ fun ExistingUserScreen(
 
                     outputOptions,
 
-                    ContextCompat.getMainExecutor(context),
+                    ContextCompat.getMainExecutor(
+                        context
+                    ),
 
                     object :
                         ImageCapture.OnImageSavedCallback {
@@ -201,147 +249,220 @@ fun ExistingUserScreen(
                             ImageCapture.OutputFileResults
                         ) {
 
-                            try {
+                            // Move processing to coroutine
+                            scope.launch {
 
-                                /*
-                                 * --------------------------------
-                                 * 1. Load captured image
-                                 * --------------------------------
-                                 */
+                                try {
 
-                                val bitmap =
-                                    BitmapFactory.decodeFile(
-                                        file.absolutePath
+                                    // --------------------------------------------------
+                                    // 1. LOAD IMAGE
+                                    // --------------------------------------------------
+
+                                    verificationMessage =
+                                        "Reading captured image..."
+
+                                    val bitmap =
+                                        BitmapFactory.decodeFile(
+                                            file.absolutePath
+                                        )
+
+                                    if (bitmap == null) {
+
+                                        verificationMessage =
+                                            "Could not read captured image."
+
+                                        isVerifying = false
+
+                                        return@launch
+                                    }
+
+                                    Log.d(
+                                        "FaceVerification",
+                                        "Captured image loaded."
                                     )
 
-                                if (bitmap == null) {
+                                    // --------------------------------------------------
+                                    // 2. DETECT + CROP EXACTLY ONE FACE
+                                    // --------------------------------------------------
 
                                     verificationMessage =
-                                        "Could not read captured image."
+                                        "Detecting face..."
 
-                                    isVerifying = false
-                                    return
-                                }
+                                    val croppedFace =
+                                        faceProcessor.cropFace(
+                                            bitmap
+                                        )
 
-                                /*
-                                 * --------------------------------
-                                 * 2. Generate new FaceNet embedding
-                                 * --------------------------------
-                                 */
+                                    if (croppedFace == null) {
 
-                                val currentEmbedding =
-                                    faceNetRecognizer
-                                        .getEmbedding(bitmap)
+                                        Log.d(
+                                            "FaceVerification",
+                                            "No face or multiple faces detected."
+                                        )
 
-                                Log.d(
-                                    "FaceVerification",
-                                    "Current embedding size: ${currentEmbedding.size}"
-                                )
+                                        verificationMessage =
+                                            "Face not detected. Show exactly one face."
 
-                                /*
-                                 * --------------------------------
-                                 * 3. Get saved embedding
-                                 * --------------------------------
-                                 */
+                                        isVerifying = false
 
-                                val savedEmbedding =
-                                    userStorage
-                                        .getFaceEmbedding()
+                                        return@launch
+                                    }
 
-                                Log.d(
-                                    "FaceVerification",
-                                    "Saved embedding size: ${savedEmbedding.size}"
-                                )
+                                    Log.d(
+                                        "FaceVerification",
+                                        "Exactly one face detected."
+                                    )
 
-                                /*
-                                 * --------------------------------
-                                 * 4. Check saved user
-                                 * --------------------------------
-                                 */
-
-                                if (savedEmbedding.size != 128) {
+                                    // --------------------------------------------------
+                                    // 3. GENERATE CURRENT FACENET EMBEDDING
+                                    // --------------------------------------------------
 
                                     verificationMessage =
-                                        "No registered face found."
+                                        "Generating face embedding..."
 
-                                    isVerifying = false
-                                    return
-                                }
+                                    val currentEmbedding =
+                                        faceNetRecognizer.getEmbedding(
+                                            croppedFace
+                                        )
 
-                                /*
-                                 * --------------------------------
-                                 * 5. Calculate similarity
-                                 * --------------------------------
-                                 */
+                                    Log.d(
+                                        "FaceVerification",
+                                        "Current embedding size: ${currentEmbedding.size}"
+                                    )
 
-                                val similarity =
-                                    faceNetRecognizer
-                                        .cosineSimilarity(
+                                    if (currentEmbedding.size != 128) {
+
+                                        verificationMessage =
+                                            "Invalid face embedding."
+
+                                        isVerifying = false
+
+                                        return@launch
+                                    }
+
+                                    // --------------------------------------------------
+                                    // 4. GET REGISTERED EMBEDDING
+                                    // --------------------------------------------------
+
+                                    verificationMessage =
+                                        "Checking registered face..."
+
+                                    val savedEmbedding =
+                                        userStorage.getFaceEmbedding()
+
+                                    // IMPORTANT:
+                                    // FloatArray? -> check null first
+                                    if (savedEmbedding == null) {
+
+                                        Log.e(
+                                            "FaceVerification",
+                                            "No registered embedding found."
+                                        )
+
+                                        verificationMessage =
+                                            "No registered face found."
+
+                                        isVerifying = false
+
+                                        return@launch
+                                    }
+
+                                    if (savedEmbedding.size != 128) {
+
+                                        Log.e(
+                                            "FaceVerification",
+                                            "Invalid saved embedding size: ${savedEmbedding.size}"
+                                        )
+
+                                        verificationMessage =
+                                            "Invalid registered face data."
+
+                                        isVerifying = false
+
+                                        return@launch
+                                    }
+
+                                    Log.d(
+                                        "FaceVerification",
+                                        "Saved embedding size: ${savedEmbedding.size}"
+                                    )
+
+                                    // --------------------------------------------------
+                                    // 5. COSINE SIMILARITY
+                                    // --------------------------------------------------
+
+                                    val similarity =
+                                        faceNetRecognizer.cosineSimilarity(
                                             currentEmbedding,
                                             savedEmbedding
                                         )
 
-                                Log.d(
-                                    "FaceVerification",
-                                    "Cosine similarity: $similarity"
-                                )
+                                    Log.d(
+                                        "FaceVerification",
+                                        "Cosine similarity: $similarity"
+                                    )
 
-                                /*
-                                 * --------------------------------
-                                 * 6. Authentication threshold
-                                 * --------------------------------
-                                 *
-                                 * We are using 0.70 as a
-                                 * starting threshold.
-                                 *
-                                 * We will tune this after testing.
-                                 */
+                                    // --------------------------------------------------
+                                    // 6. THRESHOLD
+                                    // --------------------------------------------------
 
-                                val threshold = 0.70f
-
-                                if (similarity >= threshold) {
+                                    val threshold = 0.70f
 
                                     Log.d(
                                         "FaceVerification",
-                                        "FACE MATCH"
+                                        "Threshold: $threshold"
                                     )
 
-                                    verificationMessage =
-                                        "Face verified successfully!"
+                                    // --------------------------------------------------
+                                    // 7. VERIFY
+                                    // --------------------------------------------------
 
-                                    /*
-                                     * Dashboard will be connected
-                                     * here in the next step.
-                                     *
-                                     * For now, we stay on this screen
-                                     * so we can test the similarity.
-                                     */
+                                    if (similarity >= threshold) {
 
-                                } else {
+                                        Log.d(
+                                            "FaceVerification",
+                                            "FACE MATCH"
+                                        )
 
-                                    Log.d(
+                                        verificationMessage =
+                                            "Face verified successfully!"
+
+                                        isVerifying = false
+
+                                        // --------------------------------------------------
+                                        // 8. GO TO NEXT SCREEN
+                                        // --------------------------------------------------
+
+                                        navController.navigate(
+                                            "questionnaire"
+                                        )
+
+                                    } else {
+
+                                        Log.d(
+                                            "FaceVerification",
+                                            "FACE NOT MATCHED"
+                                        )
+
+                                        verificationMessage =
+                                            "Face not recognized. Please try again."
+
+                                        isVerifying = false
+                                    }
+
+                                } catch (e: Exception) {
+
+                                    Log.e(
                                         "FaceVerification",
-                                        "FACE NOT MATCHED"
+                                        "Face verification failed",
+                                        e
                                     )
 
                                     verificationMessage =
-                                        "Face not recognized. Please try again."
+                                        "Face verification failed."
+
+                                    isVerifying = false
                                 }
-
-                            } catch (e: Exception) {
-
-                                Log.e(
-                                    "FaceVerification",
-                                    "Face verification failed",
-                                    e
-                                )
-
-                                verificationMessage =
-                                    "Face verification failed."
-
-                            } finally {
-
-                                isVerifying = false
                             }
                         }
 

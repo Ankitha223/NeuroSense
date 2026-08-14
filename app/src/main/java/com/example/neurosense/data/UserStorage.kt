@@ -9,21 +9,17 @@ class UserStorage(context: Context) {
         Context.MODE_PRIVATE
     )
 
-    // ==================================================
+    // --------------------------------------------------
     // SAVE USER
-    // ==================================================
+    // --------------------------------------------------
 
     fun saveUser(
         userId: String,
         name: String,
         age: String,
         gender: String,
-        faceImagePath: String,
-        faceEmbedding: FloatArray
+        faceImagePath: String
     ) {
-
-        val embeddingString =
-            faceEmbedding.joinToString(",")
 
         preferences.edit()
             .putString("userId", userId)
@@ -31,40 +27,26 @@ class UserStorage(context: Context) {
             .putString("age", age)
             .putString("gender", gender)
             .putString("faceImagePath", faceImagePath)
-            .putString("face_embedding", embeddingString)
             .apply()
     }
 
-    // ==================================================
-    // USER DETAILS
-    // ==================================================
+    // --------------------------------------------------
+    // GET USER DETAILS
+    // --------------------------------------------------
 
     fun getUserId(): String {
-
-        return preferences.getString(
-            "userId",
-            ""
-        ) ?: ""
+        return preferences.getString("userId", "") ?: ""
     }
 
     fun getName(): String {
-
-        return preferences.getString(
-            "name",
-            ""
-        ) ?: ""
+        return preferences.getString("name", "") ?: ""
     }
 
     fun getAge(): String {
-
-        return preferences.getString(
-            "age",
-            ""
-        ) ?: ""
+        return preferences.getString("age", "") ?: ""
     }
 
     fun getGender(): String {
-
         return preferences.getString(
             "gender",
             "Select Gender"
@@ -72,18 +54,37 @@ class UserStorage(context: Context) {
     }
 
     fun getFaceImagePath(): String {
-
         return preferences.getString(
             "faceImagePath",
             ""
         ) ?: ""
     }
 
-    // ==================================================
-    // GET FACENET EMBEDDING
-    // ==================================================
+    fun hasRegisteredUser(): Boolean {
+        return getUserId().isNotEmpty() &&
+                getFaceImagePath().isNotEmpty()
+    }
 
-    fun getFaceEmbedding(): FloatArray {
+    // --------------------------------------------------
+    // FACENET EMBEDDING
+    // --------------------------------------------------
+
+    fun saveFaceEmbedding(
+        embedding: FloatArray
+    ) {
+
+        val embeddingString =
+            embedding.joinToString(",")
+
+        preferences.edit()
+            .putString(
+                "face_embedding",
+                embeddingString
+            )
+            .apply()
+    }
+
+    fun getFaceEmbedding(): FloatArray? {
 
         val embeddingString =
             preferences.getString(
@@ -92,7 +93,7 @@ class UserStorage(context: Context) {
             )
 
         if (embeddingString.isNullOrEmpty()) {
-            return FloatArray(0)
+            return null
         }
 
         return try {
@@ -106,23 +107,9 @@ class UserStorage(context: Context) {
 
             e.printStackTrace()
 
-            FloatArray(0)
+            null
         }
     }
-
-    // ==================================================
-    // CHECK USER
-    // ==================================================
-
-    fun hasRegisteredUser(): Boolean {
-
-        return getUserId().isNotEmpty() &&
-                getFaceImagePath().isNotEmpty()
-    }
-
-    // ==================================================
-    // CHECK FACENET
-    // ==================================================
 
     fun hasFaceEmbedding(): Boolean {
 
@@ -131,16 +118,5 @@ class UserStorage(context: Context) {
 
         return embedding != null &&
                 embedding.size == 128
-    }
-
-    // ==================================================
-    // CLEAR USER
-    // ==================================================
-
-    fun clearUser() {
-
-        preferences.edit()
-            .clear()
-            .apply()
     }
 }
