@@ -434,7 +434,7 @@ fun ExistingUserScreen(
                                         // --------------------------------------------------
 
                                         navController.navigate(
-                                            "questionnaire"
+                                            "dashboard"
                                         )
 
                                     } else {

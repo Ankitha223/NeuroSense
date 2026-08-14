@@ -13,7 +13,7 @@ import com.example.neurosense.screens.LoginChoiceScreen
 import com.example.neurosense.screens.QuestionnaireScreen
 import com.example.neurosense.screens.SplashScreen
 import com.example.neurosense.viewmodel.RegistrationViewModel
-
+import com.example.neurosense.screens.DashboardScreen
 @Composable
 fun AppNavigation() {
 
@@ -62,6 +62,10 @@ fun AppNavigation() {
         composable("questionnaire") {
 
             QuestionnaireScreen(navController)
+        }
+        composable("dashboard") {
+
+            DashboardScreen(navController)
         }
     }
 }
