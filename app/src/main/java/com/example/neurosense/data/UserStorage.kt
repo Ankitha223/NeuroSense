@@ -1,7 +1,6 @@
 package com.example.neurosense.data
 
 import android.content.Context
-import org.json.JSONArray
 
 class UserStorage(context: Context) {
 
@@ -9,6 +8,10 @@ class UserStorage(context: Context) {
         "neurosense_users",
         Context.MODE_PRIVATE
     )
+
+    // ==================================================
+    // SAVE USER
+    // ==================================================
 
     fun saveUser(
         userId: String,
@@ -19,14 +22,8 @@ class UserStorage(context: Context) {
         faceEmbedding: FloatArray
     ) {
 
-        // Convert FloatArray to JSON string
-        val embeddingJson = JSONArray().apply {
-
-            faceEmbedding.forEach { value ->
-                put(value.toDouble())
-            }
-
-        }.toString()
+        val embeddingString =
+            faceEmbedding.joinToString(",")
 
         preferences.edit()
             .putString("userId", userId)
@@ -34,23 +31,40 @@ class UserStorage(context: Context) {
             .putString("age", age)
             .putString("gender", gender)
             .putString("faceImagePath", faceImagePath)
-            .putString("faceEmbedding", embeddingJson)
+            .putString("face_embedding", embeddingString)
             .apply()
     }
 
+    // ==================================================
+    // USER DETAILS
+    // ==================================================
+
     fun getUserId(): String {
-        return preferences.getString("userId", "") ?: ""
+
+        return preferences.getString(
+            "userId",
+            ""
+        ) ?: ""
     }
 
     fun getName(): String {
-        return preferences.getString("name", "") ?: ""
+
+        return preferences.getString(
+            "name",
+            ""
+        ) ?: ""
     }
 
     fun getAge(): String {
-        return preferences.getString("age", "") ?: ""
+
+        return preferences.getString(
+            "age",
+            ""
+        ) ?: ""
     }
 
     fun getGender(): String {
+
         return preferences.getString(
             "gender",
             "Select Gender"
@@ -58,30 +72,35 @@ class UserStorage(context: Context) {
     }
 
     fun getFaceImagePath(): String {
+
         return preferences.getString(
             "faceImagePath",
             ""
         ) ?: ""
     }
 
+    // ==================================================
+    // GET FACENET EMBEDDING
+    // ==================================================
+
     fun getFaceEmbedding(): FloatArray {
 
-        val embeddingJson =
+        val embeddingString =
             preferences.getString(
-                "faceEmbedding",
+                "face_embedding",
                 null
-            ) ?: return FloatArray(0)
+            )
+
+        if (embeddingString.isNullOrEmpty()) {
+            return FloatArray(0)
+        }
 
         return try {
 
-            val jsonArray =
-                JSONArray(embeddingJson)
-
-            FloatArray(jsonArray.length()) { index ->
-                jsonArray
-                    .getDouble(index)
-                    .toFloat()
-            }
+            embeddingString
+                .split(",")
+                .map { it.toFloat() }
+                .toFloatArray()
 
         } catch (e: Exception) {
 
@@ -91,10 +110,37 @@ class UserStorage(context: Context) {
         }
     }
 
+    // ==================================================
+    // CHECK USER
+    // ==================================================
+
     fun hasRegisteredUser(): Boolean {
 
         return getUserId().isNotEmpty() &&
-                getFaceImagePath().isNotEmpty() &&
-                getFaceEmbedding().size == 128
+                getFaceImagePath().isNotEmpty()
+    }
+
+    // ==================================================
+    // CHECK FACENET
+    // ==================================================
+
+    fun hasFaceEmbedding(): Boolean {
+
+        val embedding =
+            getFaceEmbedding()
+
+        return embedding != null &&
+                embedding.size == 128
+    }
+
+    // ==================================================
+    // CLEAR USER
+    // ==================================================
+
+    fun clearUser() {
+
+        preferences.edit()
+            .clear()
+            .apply()
     }
 }

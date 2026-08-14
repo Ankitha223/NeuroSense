@@ -1,10 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
     namespace = "com.example.neurosense"
+
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -15,10 +17,12 @@ android {
         applicationId = "com.example.neurosense"
         minSdk = 24
         targetSdk = 36
+
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner =
+            "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -28,17 +32,25 @@ android {
             }
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     buildFeatures {
         compose = true
     }
 }
 
 dependencies {
+
+    // --------------------------------------------------
+    // ANDROID / COMPOSE
+    // --------------------------------------------------
+
     implementation(platform(libs.androidx.compose.bom))
+
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
@@ -47,26 +59,110 @@ dependencies {
     implementation(libs.androidx.core.ktx)
 
     implementation(libs.androidx.lifecycle.runtime.ktx)
-
+    implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-auth")
     implementation("androidx.compose.material:material-icons-extended")
+
+    // --------------------------------------------------
+    // NAVIGATION
+    // --------------------------------------------------
+
     implementation("androidx.navigation:navigation-compose:2.8.0")
-    testImplementation(libs.junit)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.junit)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    // CameraX
+
+    // --------------------------------------------------
+    // CAMERA X
+    // --------------------------------------------------
+
     val cameraxVersion = "1.4.2"
 
-    implementation("androidx.camera:camera-core:$cameraxVersion")
-    implementation("androidx.camera:camera-camera2:$cameraxVersion")
-    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
-    implementation("androidx.camera:camera-view:$cameraxVersion")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
-// Face Detection (ML Kit)
-    implementation("com.google.mlkit:face-detection:16.1.7")
-    implementation("com.google.ai.edge.litert:litert:1.4.0")
+    implementation(
+        "androidx.camera:camera-core:$cameraxVersion"
+    )
+
+    implementation(
+        "androidx.camera:camera-camera2:$cameraxVersion"
+    )
+
+    implementation(
+        "androidx.camera:camera-lifecycle:$cameraxVersion"
+    )
+
+    implementation(
+        "androidx.camera:camera-view:$cameraxVersion"
+    )
+
+    implementation(
+        "androidx.lifecycle:lifecycle-runtime-compose:2.9.2"
+    )
+
+    // --------------------------------------------------
+    // COROUTINES
+    // --------------------------------------------------
+
+    implementation(
+        "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2"
+    )
+
+    // --------------------------------------------------
+    // ML KIT FACE DETECTION
+    // --------------------------------------------------
+
+    implementation(
+        "com.google.mlkit:face-detection:16.1.7"
+    )
+
+    // --------------------------------------------------
+    // FACENET / LITERT
+    // --------------------------------------------------
+
+    implementation(
+        "com.google.ai.edge.litert:litert:1.4.0"
+    )
+
+    // --------------------------------------------------
+    // FIREBASE
+    // --------------------------------------------------
+
+    implementation(
+        platform("com.google.firebase:firebase-bom:34.16.0")
+    )
+
+    implementation(
+        "com.google.firebase:firebase-auth"
+    )
+
+    implementation(
+        "com.google.firebase:firebase-firestore"
+    )
+
+    // --------------------------------------------------
+    // TESTING
+    // --------------------------------------------------
+
+    testImplementation(libs.junit)
+
+    androidTestImplementation(
+        platform(libs.androidx.compose.bom)
+    )
+
+    androidTestImplementation(
+        libs.androidx.compose.ui.test.junit4
+    )
+
+    androidTestImplementation(
+        libs.androidx.espresso.core
+    )
+
+    androidTestImplementation(
+        libs.androidx.junit
+    )
+
+    debugImplementation(
+        libs.androidx.compose.ui.test.manifest
+    )
+
+    debugImplementation(
+        libs.androidx.compose.ui.tooling
+    )
 }

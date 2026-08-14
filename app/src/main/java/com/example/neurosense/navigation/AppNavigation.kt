@@ -7,13 +7,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
 import com.example.neurosense.screens.CameraCaptureScreen
+import com.example.neurosense.screens.ExistingUserScreen
 import com.example.neurosense.screens.FaceRegistrationScreen
 import com.example.neurosense.screens.LoginChoiceScreen
 import com.example.neurosense.screens.QuestionnaireScreen
 import com.example.neurosense.screens.SplashScreen
 import com.example.neurosense.viewmodel.RegistrationViewModel
-import com.example.neurosense.screens.ExistingUserScreen
-import com.example.neurosense.screens.ExistingUserCameraScreen
+
 @Composable
 fun AppNavigation() {
 
@@ -22,24 +22,36 @@ fun AppNavigation() {
     val registrationViewModel: RegistrationViewModel = viewModel()
 
     NavHost(
-
         navController = navController,
-
         startDestination = "splash"
-
     ) {
 
         composable("splash") {
 
             SplashScreen(navController)
-
         }
-        composable("existing_user_camera") {
 
-            ExistingUserCameraScreen(
-                navController = navController
+        composable("login_choice") {
+
+            LoginChoiceScreen(navController)
+        }
+
+        composable("face_registration") {
+
+            FaceRegistrationScreen(
+                navController = navController,
+                viewModel = registrationViewModel
             )
         }
+
+        composable("camera_capture") {
+
+            CameraCaptureScreen(
+                navController = navController,
+                viewModel = registrationViewModel
+            )
+        }
+
         composable("existing_user") {
 
             ExistingUserScreen(
@@ -47,45 +59,9 @@ fun AppNavigation() {
             )
         }
 
-        composable("login_choice") {
-
-            LoginChoiceScreen(navController)
-
-        }
-
-        composable("face_registration") {
-
-            FaceRegistrationScreen(
-
-                navController = navController,
-
-                viewModel = registrationViewModel
-
-            )
-
-        }
-
-        composable("camera_capture") {
-
-            CameraCaptureScreen(
-
-                navController = navController,
-
-                viewModel = registrationViewModel
-
-            )
-
-        }
-        composable("existing_user") {
-            ExistingUserScreen(navController)
-        }
-
         composable("questionnaire") {
 
             QuestionnaireScreen(navController)
-
         }
-
     }
-
 }

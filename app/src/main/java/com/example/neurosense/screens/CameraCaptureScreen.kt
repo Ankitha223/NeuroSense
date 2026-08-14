@@ -33,6 +33,7 @@ import com.example.neurosense.viewmodel.RegistrationViewModel
 
 import java.io.File
 
+
 @Composable
 fun CameraCaptureScreen(
     navController: NavController,
@@ -41,7 +42,12 @@ fun CameraCaptureScreen(
 
     val context = LocalContext.current
 
+    // ==================================================
+    // CAMERA PERMISSION
+    // ==================================================
+
     var hasCameraPermission by remember {
+
         mutableStateOf(
             ContextCompat.checkSelfPermission(
                 context,
@@ -50,6 +56,10 @@ fun CameraCaptureScreen(
         )
     }
 
+    // ==================================================
+    // IMAGE CAPTURE
+    // ==================================================
+
     var imageCapture by remember {
         mutableStateOf<ImageCapture?>(null)
     }
@@ -57,6 +67,10 @@ fun CameraCaptureScreen(
     var isCapturing by remember {
         mutableStateOf(false)
     }
+
+    // ==================================================
+    // CAMERA PERMISSION LAUNCHER
+    // ==================================================
 
     val launcher =
         rememberLauncherForActivityResult(
@@ -69,24 +83,30 @@ fun CameraCaptureScreen(
     LaunchedEffect(Unit) {
 
         if (!hasCameraPermission) {
-            launcher.launch(Manifest.permission.CAMERA)
+
+            launcher.launch(
+                Manifest.permission.CAMERA
+            )
         }
     }
+
+    // ==================================================
+    // CAMERA PREVIEW
+    // ==================================================
 
     val previewView = remember {
         PreviewView(context)
     }
 
-    /*
-     * FaceNet recognizer
-     */
+    // ==================================================
+    // FACENET RECOGNIZER
+    // ==================================================
+
     val faceNetRecognizer = remember {
         FaceNetRecognizer(context)
     }
 
-    /*
-     * Close FaceNet when this screen leaves memory.
-     */
+    // Close FaceNet when this screen is destroyed
     DisposableEffect(Unit) {
 
         onDispose {
@@ -94,9 +114,17 @@ fun CameraCaptureScreen(
         }
     }
 
+    // ==================================================
+    // UI
+    // ==================================================
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
+
+        // ==================================================
+        // CAMERA
+        // ==================================================
 
         Box(
             modifier = Modifier.weight(1f),
@@ -123,7 +151,12 @@ fun CameraCaptureScreen(
             }
         }
 
+        // ==================================================
+        // CAPTURE BUTTON
+        // ==================================================
+
         Button(
+
             onClick = {
 
                 val capture = imageCapture
@@ -134,10 +167,12 @@ fun CameraCaptureScreen(
 
                 isCapturing = true
 
-                /*
-                 * Generate User ID if one doesn't already exist.
-                 */
+                // ==================================================
+                // GENERATE USER ID
+                // ==================================================
+
                 val userId =
+
                     if (viewModel.userId.isNotEmpty()) {
 
                         viewModel.userId
@@ -153,9 +188,10 @@ fun CameraCaptureScreen(
 
                 viewModel.userId = userId
 
-                /*
-                 * File where the actual camera photo is saved.
-                 */
+                // ==================================================
+                // FACE IMAGE FILE
+                // ==================================================
+
                 val file = File(
                     context.filesDir,
                     "face_$userId.jpg"
@@ -166,12 +202,22 @@ fun CameraCaptureScreen(
                         .Builder(file)
                         .build()
 
+                // ==================================================
+                // TAKE PHOTO
+                // ==================================================
+
                 capture.takePicture(
+
                     outputOptions,
+
                     ContextCompat.getMainExecutor(context),
 
                     object :
                         ImageCapture.OnImageSavedCallback {
+
+                        // ==================================================
+                        // PHOTO SAVED SUCCESSFULLY
+                        // ==================================================
 
                         override fun onImageSaved(
                             outputFileResults:
@@ -180,20 +226,16 @@ fun CameraCaptureScreen(
 
                             try {
 
-                                /*
-                                 * --------------------------------
-                                 * 1. Save image path
-                                 * --------------------------------
-                                 */
+                                // ==================================================
+                                // 1. SAVE IMAGE PATH
+                                // ==================================================
 
                                 viewModel.faceImagePath =
                                     file.absolutePath
 
-                                /*
-                                 * --------------------------------
-                                 * 2. Load captured image
-                                 * --------------------------------
-                                 */
+                                // ==================================================
+                                // 2. LOAD IMAGE
+                                // ==================================================
 
                                 val bitmap =
                                     BitmapFactory.decodeFile(
@@ -211,21 +253,22 @@ fun CameraCaptureScreen(
                                     return
                                 }
 
-                                /*
-                                 * --------------------------------
-                                 * 3. Generate FaceNet embedding
-                                 * --------------------------------
-                                 */
+                                // ==================================================
+                                // 3. GENERATE FACENET EMBEDDING
+                                // ==================================================
+
+                                Log.d(
+                                    "FaceNetTest",
+                                    "Generating FaceNet embedding..."
+                                )
 
                                 val embedding =
                                     faceNetRecognizer
                                         .getEmbedding(bitmap)
 
-                                /*
-                                 * --------------------------------
-                                 * 4. Verify embedding
-                                 * --------------------------------
-                                 */
+                                // ==================================================
+                                // 4. CHECK EMBEDDING
+                                // ==================================================
 
                                 Log.d(
                                     "FaceNetTest",
@@ -248,11 +291,9 @@ fun CameraCaptureScreen(
                                     return
                                 }
 
-                                /*
-                                 * --------------------------------
-                                 * 5. Save user + embedding
-                                 * --------------------------------
-                                 */
+                                // ==================================================
+                                // 5. SAVE USER + EMBEDDING
+                                // ==================================================
 
                                 val userStorage =
                                     UserStorage(context)
@@ -278,51 +319,56 @@ fun CameraCaptureScreen(
                                         embedding
                                 )
 
-                                /*
-                                 * --------------------------------
-                                 * 6. Verify that it was saved
-                                 * --------------------------------
-                                 */
+                                // ==================================================
+                                // 6. READ SAVED EMBEDDING
+                                // ==================================================
 
-                                val savedEmbedding =
-                                    userStorage
-                                        .getFaceEmbedding()
+                                val savedEmbedding = userStorage.getFaceEmbedding()
+
+                                if (savedEmbedding == null) {
+
+                                    Log.e(
+                                        "FaceNetTest",
+                                        "ERROR: Face embedding was not saved."
+                                    )
+
+                                    isCapturing = false
+                                    return
+
+                                }
 
                                 Log.d(
                                     "FaceNetTest",
                                     "Saved embedding size: ${savedEmbedding.size}"
                                 )
 
-                                if (savedEmbedding.size == 128) {
-
-                                    Log.d(
-                                        "FaceNetTest",
-                                        "SUCCESS: Face embedding saved!"
-                                    )
-
-                                } else {
+                                if (savedEmbedding.size != 128) {
 
                                     Log.e(
                                         "FaceNetTest",
-                                        "ERROR: Face embedding was not saved correctly."
+                                        "ERROR: Invalid saved embedding size."
                                     )
+
+                                    isCapturing = false
+                                    return
                                 }
 
-                                /*
-                                 * --------------------------------
-                                 * 7. Mark face as captured
-                                 * --------------------------------
-                                 */
+                                Log.d(
+                                    "FaceNetTest",
+                                    "SUCCESS: Face embedding saved!"
+                                )
+
+                                // ==================================================
+                                // 8. MARK FACE AS CAPTURED
+                                // ==================================================
 
                                 viewModel.faceCaptured = true
 
                                 isCapturing = false
 
-                                /*
-                                 * --------------------------------
-                                 * 8. Return to registration
-                                 * --------------------------------
-                                 */
+                                // ==================================================
+                                // 9. RETURN TO REGISTRATION
+                                // ==================================================
 
                                 navController.popBackStack()
 
@@ -337,6 +383,10 @@ fun CameraCaptureScreen(
                                 )
                             }
                         }
+
+                        // ==================================================
+                        // PHOTO CAPTURE ERROR
+                        // ==================================================
 
                         override fun onError(
                             exception: ImageCaptureException
@@ -354,15 +404,20 @@ fun CameraCaptureScreen(
                 )
             },
 
+            // ==================================================
+            // BUTTON ENABLE CONDITION
+            // ==================================================
+
             enabled =
                 hasCameraPermission &&
                         imageCapture != null &&
                         !isCapturing,
 
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .height(55.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .height(55.dp)
 
         ) {
 
