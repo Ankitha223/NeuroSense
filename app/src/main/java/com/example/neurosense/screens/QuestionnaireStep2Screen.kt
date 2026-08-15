@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -15,7 +16,7 @@ import androidx.navigation.NavController
 import com.example.neurosense.components.QuestionCard
 
 @Composable
-fun QuestionnaireScreen(
+fun QuestionnaireStep2Screen(
     navController: NavController
 ) {
 
@@ -26,14 +27,12 @@ fun QuestionnaireScreen(
     }
 
     val questions = listOf(
-        "Do you experience hand tremors?",
-        "Do you have difficulty maintaining balance while walking?",
-        "Do you feel muscle stiffness?",
-        "Do you experience numbness or tingling?",
-        "Do you have difficulty speaking clearly?",
-        "Do you notice slower body movements than usual?",
-        "Do you experience frequent dizziness?",
-        "Do you have difficulty gripping objects?"
+        "Do you find it difficult to perform daily activities?",
+        "Do you have difficulty walking for a long distance?",
+        "Do you have difficulty getting up from a chair?",
+        "Do you have difficulty holding small objects?",
+        "Do you feel weakness in your limbs?",
+        "Do you experience difficulty coordinating movements?"
     )
 
     var message by remember {
@@ -58,20 +57,18 @@ fun QuestionnaireScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             LinearProgressIndicator(
-                progress = { 0.33f },
+                progress = { 0.66f },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "Step 1 of 3"
-            )
+            Text("Step 2 of 3")
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Neurological Symptoms",
+                text = "Daily & Motor Activities",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -79,26 +76,16 @@ fun QuestionnaireScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        item {
+        items(questions) { question ->
 
-            questions.forEach { question ->
-
-                QuestionCard(
-                    question = question,
-                    selectedAnswer = answers[question],
-                    onAnswerSelected = { answer ->
-
-                        answers[question] = answer
-
-                        message = ""
-
-                        Log.d(
-                            "Questionnaire",
-                            "$question = $answer"
-                        )
-                    }
-                )
-            }
+            QuestionCard(
+                question = question,
+                selectedAnswer = answers[question],
+                onAnswerSelected = {
+                    answers[question] = it
+                    message = ""
+                }
+            )
         }
 
         item {
@@ -118,38 +105,17 @@ fun QuestionnaireScreen(
             Button(
                 onClick = {
 
-                    Log.d(
-                        "Questionnaire",
-                        "Next button clicked"
-                    )
+                    if (questions.any { answers[it] == null }) {
 
-                    Log.d(
-                        "Questionnaire",
-                        "Answered: ${answers.size}/${questions.size}"
-                    )
-
-                    val unansweredQuestions =
-                        questions.filter { question ->
-                            answers[question] == null
-                        }
-
-                    if (unansweredQuestions.isNotEmpty()) {
-
-                        message =
-                            "Please answer all questions. " +
-                                    "${unansweredQuestions.size} question(s) remaining."
-
-                        Log.d(
-                            "Questionnaire",
-                            "Unanswered: $unansweredQuestions"
-                        )
+                        message = "Please answer all questions."
 
                         return@Button
                     }
 
                     /*
-                     * Save Step 1 answers.
+                     * Store Step 2 answers.
                      */
+
                     val preferences =
                         context.getSharedPreferences(
                             "neurosense_questionnaire",
@@ -160,12 +126,9 @@ fun QuestionnaireScreen(
 
                     questions.forEach { question ->
 
-                        val answer =
-                            answers[question] ?: false
-
                         editor.putBoolean(
-                            "step1_$question",
-                            answer
+                            "step2_$question",
+                            answers[question] == true
                         )
                     }
 
@@ -173,18 +136,12 @@ fun QuestionnaireScreen(
 
                     Log.d(
                         "Questionnaire",
-                        "Step 1 completed successfully."
+                        "Step 2 completed"
                     )
 
-                    /*
-                     * Move to Step 2.
-                     */
                     navController.navigate(
-                        "questionnaire_step2"
-                    ) {
-
-                        launchSingleTop = true
-                    }
+                        "questionnaire_step3"
+                    )
                 },
 
                 modifier = Modifier

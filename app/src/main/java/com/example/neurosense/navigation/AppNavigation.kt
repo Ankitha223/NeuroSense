@@ -11,6 +11,8 @@ import com.example.neurosense.screens.ExistingUserScreen
 import com.example.neurosense.screens.FaceRegistrationScreen
 import com.example.neurosense.screens.LoginChoiceScreen
 import com.example.neurosense.screens.QuestionnaireScreen
+import com.example.neurosense.screens.QuestionnaireStep2Screen
+import com.example.neurosense.screens.QuestionnaireStep3Screen
 import com.example.neurosense.screens.SplashScreen
 import com.example.neurosense.viewmodel.RegistrationViewModel
 import com.example.neurosense.screens.DashboardScreen
@@ -60,8 +62,15 @@ fun AppNavigation() {
         }
 
         composable("questionnaire") {
-
             QuestionnaireScreen(navController)
+        }
+
+        composable("questionnaire_step2") {
+            QuestionnaireStep2Screen(navController)
+        }
+
+        composable("questionnaire_step3") {
+            QuestionnaireStep3Screen(navController)
         }
         composable("dashboard") {
 
