@@ -24,8 +24,10 @@ import com.example.neurosense.data.UserStorage
 import com.example.neurosense.recognition.FaceImageProcessor
 import com.example.neurosense.recognition.FaceNetRecognizer
 import com.example.neurosense.viewmodel.RegistrationViewModel
-import java.io.File
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.io.File
 
 @Composable
 fun CameraCaptureScreen(
@@ -61,6 +63,7 @@ fun CameraCaptureScreen(
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { granted ->
+
             hasCameraPermission = granted
 
             if (!granted) {
@@ -291,7 +294,8 @@ fun CameraCaptureScreen(
                                         UserStorage(context)
 
                                     /*
-                                     * Save user information.
+                                     * Save user information
+                                     * locally.
                                      */
                                     userStorage.saveUser(
                                         userId =
@@ -312,7 +316,7 @@ fun CameraCaptureScreen(
 
                                     /*
                                      * Save 128-dimensional
-                                     * FaceNet embedding.
+                                     * FaceNet embedding locally.
                                      */
                                     userStorage.saveFaceEmbedding(
                                         embedding
@@ -342,6 +346,50 @@ fun CameraCaptureScreen(
                                         return@launch
                                     }
 
+                                    /*
+                                     * --------------------------------------------------
+                                     * FIREBASE FIRESTORE
+                                     * --------------------------------------------------
+                                     *
+                                     * Save the registered user's basic details
+                                     * to Firestore.
+                                     */
+
+                                    message =
+                                        "Saving user to Firebase..."
+
+                                    val firestore =
+                                        FirebaseFirestore
+                                            .getInstance()
+
+                                    val userData =
+                                        hashMapOf(
+                                            "userId" to viewModel.userId,
+                                            "name" to viewModel.name,
+                                            "age" to viewModel.age,
+                                            "gender" to viewModel.gender,
+                                            "createdAt" to System.currentTimeMillis()
+                                        )
+
+                                    firestore
+                                        .collection("users")
+                                        .document(viewModel.userId)
+                                        .set(userData)
+                                        .await()
+
+                                    Log.d(
+                                        "FirebaseRegistration",
+                                        "User saved successfully."
+                                    )
+
+                                    Log.d(
+                                        "FirebaseRegistration",
+                                        "User ID: ${viewModel.userId}"
+                                    )
+
+                                    /*
+                                     * Update ViewModel.
+                                     */
                                     viewModel.faceImagePath =
                                         file.absolutePath
 
@@ -368,7 +416,9 @@ fun CameraCaptureScreen(
                                     isCapturing = false
 
                                     message =
-                                        "Face registration failed."
+                                        "Registration failed: ${
+                                            e.message ?: "Unknown error"
+                                        }"
 
                                     Log.e(
                                         "FaceRegistration",
