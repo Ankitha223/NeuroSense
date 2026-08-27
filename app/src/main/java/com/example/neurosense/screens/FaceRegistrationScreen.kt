@@ -1,10 +1,13 @@
 package com.example.neurosense.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -70,7 +73,47 @@ fun FaceRegistrationScreen(
 
         ) {
 
-            Spacer(modifier = Modifier.height(20.dp))
+            /*
+             * --------------------------------------------------
+             * BACK BUTTON
+             * --------------------------------------------------
+             */
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp)
+                    .clickable {
+
+                        navController.navigate("login_choice") {
+
+                            popUpTo("face_registration") {
+                                inclusive = true
+                            }
+                        }
+                    },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back"
+                )
+
+                Spacer(
+                    modifier = Modifier.width(8.dp)
+                )
+
+                Text(
+                    text = "Back",
+                    fontSize = 16.sp,
+                    color = Color.DarkGray
+                )
+            }
+
+            Spacer(
+                modifier = Modifier.height(10.dp)
+            )
 
             Text(
                 text = "New User Registration",
@@ -79,7 +122,9 @@ fun FaceRegistrationScreen(
                 color = Color(0xFF1976D2)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
 
             Text(
                 text = "Please enter your personal details",
@@ -87,7 +132,10 @@ fun FaceRegistrationScreen(
                 color = Color.Gray
             )
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(
+                modifier = Modifier.height(30.dp)
+            )
+
             OutlinedTextField(
 
                 value = viewModel.name,
@@ -98,14 +146,20 @@ fun FaceRegistrationScreen(
                         it.isLetter() || it.isWhitespace()
                     }
 
-                    val cleaned = filtered.replace(Regex("\\s+"), " ")
+                    val cleaned =
+                        filtered.replace(
+                            Regex("\\s+"),
+                            " "
+                        )
 
-                    viewModel.name = cleaned.replaceFirstChar {
-                        if (it.isLowerCase())
-                            it.titlecase()
-                        else
-                            it.toString()
-                    }
+                    viewModel.name =
+                        cleaned.replaceFirstChar {
+
+                            if (it.isLowerCase())
+                                it.titlecase()
+                            else
+                                it.toString()
+                        }
 
                     nameError =
                         when {
@@ -117,9 +171,7 @@ fun FaceRegistrationScreen(
                                 "Name should contain at least 2 letters."
 
                             else -> ""
-
                         }
-
                 },
 
                 modifier = Modifier.fillMaxWidth(),
@@ -130,33 +182,42 @@ fun FaceRegistrationScreen(
 
                 singleLine = true,
 
-                isError = nameError.isNotEmpty(),
+                isError =
+                    nameError.isNotEmpty(),
 
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Words,
-                    imeAction = ImeAction.Next
-                ),
+                keyboardOptions =
+                    KeyboardOptions(
+                        capitalization =
+                            KeyboardCapitalization.Words,
+                        imeAction =
+                            ImeAction.Next
+                    ),
 
-                keyboardActions = KeyboardActions(
-                    onNext = {
-                        ageFocusRequester.requestFocus()
-                    }
-                )
-
+                keyboardActions =
+                    KeyboardActions(
+                        onNext = {
+                            ageFocusRequester.requestFocus()
+                        }
+                    )
             )
 
             if (nameError.isNotEmpty()) {
 
                 Text(
                     text = nameError,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth()
+                    color =
+                        MaterialTheme.colorScheme.error,
+                    style =
+                        MaterialTheme.typography.bodySmall,
+                    modifier =
+                        Modifier.fillMaxWidth()
                 )
-
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(
+                modifier =
+                    Modifier.height(18.dp)
+            )
 
             OutlinedTextField(
 
@@ -164,9 +225,10 @@ fun FaceRegistrationScreen(
 
                 onValueChange = { input ->
 
-                    val filtered = input.filter {
-                        it.isDigit()
-                    }
+                    val filtered =
+                        input.filter {
+                            it.isDigit()
+                        }
 
                     if (filtered.length <= 2)
                         viewModel.age = filtered
@@ -184,14 +246,14 @@ fun FaceRegistrationScreen(
                                 "Age must be between 1 and 99."
 
                             else -> ""
-
                         }
-
                 },
 
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(ageFocusRequester),
+                    .focusRequester(
+                        ageFocusRequester
+                    ),
 
                 label = {
                     Text("Age")
@@ -199,37 +261,46 @@ fun FaceRegistrationScreen(
 
                 singleLine = true,
 
-                isError = ageError.isNotEmpty(),
+                isError =
+                    ageError.isNotEmpty(),
 
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number,
-                    imeAction = ImeAction.Next
-                ),
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType =
+                            KeyboardType.Number,
+                        imeAction =
+                            ImeAction.Next
+                    ),
 
-                keyboardActions = KeyboardActions(
-                    onNext = {
+                keyboardActions =
+                    KeyboardActions(
+                        onNext = {
 
-                        genderFocusRequester.requestFocus()
+                            genderFocusRequester
+                                .requestFocus()
 
-                        expanded = true
-
-                    }
-                )
-
+                            expanded = true
+                        }
+                    )
             )
 
             if (ageError.isNotEmpty()) {
 
                 Text(
                     text = ageError,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth()
+                    color =
+                        MaterialTheme.colorScheme.error,
+                    style =
+                        MaterialTheme.typography.bodySmall,
+                    modifier =
+                        Modifier.fillMaxWidth()
                 )
-
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(
+                modifier =
+                    Modifier.height(18.dp)
+            )
 
             ExposedDropdownMenuBox(
 
@@ -238,14 +309,14 @@ fun FaceRegistrationScreen(
                 onExpandedChange = {
 
                     expanded = !expanded
-
                 }
 
             ) {
 
                 OutlinedTextField(
 
-                    value = viewModel.gender,
+                    value =
+                        viewModel.gender,
 
                     onValueChange = {},
 
@@ -253,21 +324,25 @@ fun FaceRegistrationScreen(
 
                     modifier = Modifier
                         .menuAnchor()
-                        .focusRequester(genderFocusRequester)
+                        .focusRequester(
+                            genderFocusRequester
+                        )
                         .fillMaxWidth(),
 
                     label = {
                         Text("Gender")
                     },
 
-                    isError = genderError.isNotEmpty(),
+                    isError =
+                        genderError.isNotEmpty(),
 
                     trailingIcon = {
 
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded)
-
+                        ExposedDropdownMenuDefaults
+                            .TrailingIcon(
+                                expanded
+                            )
                     }
-
                 )
 
                 ExposedDropdownMenu(
@@ -277,7 +352,6 @@ fun FaceRegistrationScreen(
                     onDismissRequest = {
 
                         expanded = false
-
                     }
 
                 ) {
@@ -289,27 +363,23 @@ fun FaceRegistrationScreen(
                             text = {
 
                                 Text(gender)
-
                             },
 
                             onClick = {
 
-                                viewModel.gender = gender
+                                viewModel.gender =
+                                    gender
 
                                 genderError = ""
 
                                 expanded = false
 
-                                captureButtonFocusRequester.requestFocus()
-
+                                captureButtonFocusRequester
+                                    .requestFocus()
                             }
-
                         )
-
                     }
-
                 }
-
             }
 
             if (genderError.isNotEmpty()) {
@@ -318,29 +388,37 @@ fun FaceRegistrationScreen(
 
                     text = genderError,
 
-                    color = MaterialTheme.colorScheme.error,
+                    color =
+                        MaterialTheme.colorScheme.error,
 
-                    style = MaterialTheme.typography.bodySmall,
+                    style =
+                        MaterialTheme.typography.bodySmall,
 
-                    modifier = Modifier.fillMaxWidth()
-
+                    modifier =
+                        Modifier.fillMaxWidth()
                 )
-
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(
+                modifier =
+                    Modifier.height(30.dp)
+            )
+
             Button(
 
                 onClick = {
 
-                    navController.navigate("camera_capture")
-
+                    navController.navigate(
+                        "camera_capture"
+                    )
                 },
 
                 enabled = formValid,
 
                 modifier = Modifier
-                    .focusRequester(captureButtonFocusRequester)
+                    .focusRequester(
+                        captureButtonFocusRequester
+                    )
                     .fillMaxWidth()
                     .height(55.dp)
 
@@ -355,90 +433,106 @@ fun FaceRegistrationScreen(
                             "Capture Face",
 
                     fontSize = 18.sp
-
                 )
-
             }
 
             if (viewModel.faceCaptured) {
 
-                Spacer(modifier = Modifier.height(25.dp))
+                Spacer(
+                    modifier =
+                        Modifier.height(25.dp)
+                )
 
                 Card(
 
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier.fillMaxWidth(),
 
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFE3F2FD)
-                    )
-
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                Color(0xFFE3F2FD)
+                        )
                 ) {
 
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier =
+                            Modifier.padding(16.dp)
                     ) {
 
                         Text(
-                            text = "Generated User ID",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.DarkGray
+                            text =
+                                "Generated User ID",
+                            fontWeight =
+                                FontWeight.Bold,
+                            color =
+                                Color.DarkGray
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
 
                         Text(
-                            text = viewModel.userId,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1976D2)
+                            text =
+                                viewModel.userId,
+                            fontSize =
+                                22.sp,
+                            fontWeight =
+                                FontWeight.Bold,
+                            color =
+                                Color(0xFF1976D2)
                         )
-
                     }
-
                 }
-
             }
 
-            Spacer(modifier = Modifier.height(25.dp))
+            Spacer(
+                modifier =
+                    Modifier.height(25.dp)
+            )
 
             Button(
 
                 onClick = {
 
-                    if (viewModel.gender == "Select Gender") {
+                    if (
+                        viewModel.gender ==
+                        "Select Gender"
+                    ) {
 
-                        genderError = "Please select your gender."
+                        genderError =
+                            "Please select your gender."
 
                         return@Button
-
                     }
 
-                    navController.navigate("questionnaire")
-
+                    navController.navigate(
+                        "questionnaire"
+                    )
                 },
 
-                enabled = viewModel.faceCaptured,
+                enabled =
+                    viewModel.faceCaptured,
 
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(55.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(55.dp)
 
             ) {
 
                 Text(
-
                     text = "Continue",
-
                     fontSize = 18.sp
-
                 )
-
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
-
+            Spacer(
+                modifier =
+                    Modifier.height(30.dp)
+            )
         }
-
     }
-
 }

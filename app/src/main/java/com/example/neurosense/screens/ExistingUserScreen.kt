@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.neurosense.camera.CameraPreview
+import com.example.neurosense.data.UserData
 import com.example.neurosense.data.UserStorage
 import com.example.neurosense.recognition.FaceImageProcessor
 import com.example.neurosense.recognition.FaceNetRecognizer
@@ -33,18 +34,23 @@ fun ExistingUserScreen(
 ) {
 
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+
+    val scope =
+        rememberCoroutineScope()
 
     // --------------------------------------------------
     // CAMERA PERMISSION
     // --------------------------------------------------
 
     var hasCameraPermission by remember {
+
         mutableStateOf(
+
             ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
+            ) ==
+                    PackageManager.PERMISSION_GRANTED
         )
     }
 
@@ -66,12 +72,16 @@ fun ExistingUserScreen(
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
+
             ActivityResultContracts.RequestPermission()
+
         ) { granted ->
 
-            hasCameraPermission = granted
+            hasCameraPermission =
+                granted
 
             if (!granted) {
+
                 verificationMessage =
                     "Camera permission is required."
             }
@@ -87,33 +97,37 @@ fun ExistingUserScreen(
         }
     }
 
-    val previewView = remember {
-        PreviewView(context)
-    }
+    val previewView =
+        remember {
+            PreviewView(context)
+        }
 
     // --------------------------------------------------
     // FACENET
     // --------------------------------------------------
 
-    val faceNetRecognizer = remember {
-        FaceNetRecognizer(context)
-    }
+    val faceNetRecognizer =
+        remember {
+            FaceNetRecognizer(context)
+        }
 
     // --------------------------------------------------
-    // FACE DETECTOR / CROPPER
+    // FACE PROCESSOR
     // --------------------------------------------------
 
-    val faceProcessor = remember {
-        FaceImageProcessor()
-    }
+    val faceProcessor =
+        remember {
+            FaceImageProcessor()
+        }
 
     // --------------------------------------------------
     // USER STORAGE
     // --------------------------------------------------
 
-    val userStorage = remember {
-        UserStorage(context)
-    }
+    val userStorage =
+        remember {
+            UserStorage(context)
+        }
 
     // --------------------------------------------------
     // RELEASE RESOURCES
@@ -124,6 +138,7 @@ fun ExistingUserScreen(
         onDispose {
 
             faceNetRecognizer.close()
+
             faceProcessor.close()
         }
     }
@@ -133,8 +148,13 @@ fun ExistingUserScreen(
     // --------------------------------------------------
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier =
+            Modifier.fillMaxSize()
     ) {
+
+        // --------------------------------------------------
+        // TITLE
+        // --------------------------------------------------
 
         Text(
             text = "Face Verification",
@@ -149,26 +169,38 @@ fun ExistingUserScreen(
         // --------------------------------------------------
 
         Box(
+
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
-            contentAlignment = Alignment.Center
+
+            contentAlignment =
+                Alignment.Center
+
         ) {
 
             if (hasCameraPermission) {
 
                 CameraPreview(
-                    previewView = previewView,
-                    modifier = Modifier.fillMaxSize(),
+
+                    previewView =
+                        previewView,
+
+                    modifier =
+                        Modifier.fillMaxSize(),
+
                     onImageCaptureReady = {
-                        imageCapture = it
+
+                        imageCapture =
+                            it
                     }
                 )
 
             } else {
 
                 Text(
-                    text = "Camera permission is required",
+                    text =
+                        "Camera permission is required",
                     fontSize = 18.sp
                 )
             }
@@ -181,8 +213,12 @@ fun ExistingUserScreen(
         if (verificationMessage.isNotEmpty()) {
 
             Text(
-                text = verificationMessage,
+
+                text =
+                    verificationMessage,
+
                 fontSize = 18.sp,
+
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
@@ -200,7 +236,8 @@ fun ExistingUserScreen(
 
             onClick = {
 
-                val capture = imageCapture
+                val capture =
+                    imageCapture
 
                 if (capture == null) {
 
@@ -211,6 +248,7 @@ fun ExistingUserScreen(
                 }
 
                 if (isVerifying) {
+
                     return@Button
                 }
 
@@ -223,10 +261,11 @@ fun ExistingUserScreen(
                 // TEMPORARY IMAGE FILE
                 // --------------------------------------------------
 
-                val file = File(
-                    context.cacheDir,
-                    "verification_face.jpg"
-                )
+                val file =
+                    File(
+                        context.cacheDir,
+                        "verification_face.jpg"
+                    )
 
                 val outputOptions =
                     OutputFileOptions
@@ -245,11 +284,12 @@ fun ExistingUserScreen(
                         ImageCapture.OnImageSavedCallback {
 
                         override fun onImageSaved(
+
                             outputFileResults:
                             ImageCapture.OutputFileResults
+
                         ) {
 
-                            // Move processing to coroutine
                             scope.launch {
 
                                 try {
@@ -271,7 +311,8 @@ fun ExistingUserScreen(
                                         verificationMessage =
                                             "Could not read captured image."
 
-                                        isVerifying = false
+                                        isVerifying =
+                                            false
 
                                         return@launch
                                     }
@@ -282,7 +323,7 @@ fun ExistingUserScreen(
                                     )
 
                                     // --------------------------------------------------
-                                    // 2. DETECT + CROP EXACTLY ONE FACE
+                                    // 2. DETECT + CROP ONE FACE
                                     // --------------------------------------------------
 
                                     verificationMessage =
@@ -303,7 +344,8 @@ fun ExistingUserScreen(
                                         verificationMessage =
                                             "Face not detected. Show exactly one face."
 
-                                        isVerifying = false
+                                        isVerifying =
+                                            false
 
                                         return@launch
                                     }
@@ -314,7 +356,7 @@ fun ExistingUserScreen(
                                     )
 
                                     // --------------------------------------------------
-                                    // 3. GENERATE CURRENT FACENET EMBEDDING
+                                    // 3. CURRENT FACENET EMBEDDING
                                     // --------------------------------------------------
 
                                     verificationMessage =
@@ -330,83 +372,128 @@ fun ExistingUserScreen(
                                         "Current embedding size: ${currentEmbedding.size}"
                                     )
 
-                                    if (currentEmbedding.size != 128) {
+                                    if (
+                                        currentEmbedding.size != 128
+                                    ) {
 
                                         verificationMessage =
                                             "Invalid face embedding."
 
-                                        isVerifying = false
+                                        isVerifying =
+                                            false
 
                                         return@launch
                                     }
 
                                     // --------------------------------------------------
-                                    // 4. GET REGISTERED EMBEDDING
+                                    // 4. GET ALL REGISTERED USERS
                                     // --------------------------------------------------
 
                                     verificationMessage =
-                                        "Checking registered face..."
+                                        "Checking registered faces..."
 
-                                    val savedEmbedding =
-                                        userStorage.getFaceEmbedding()
+                                    val registeredUsers =
+                                        userStorage.getAllUsers()
 
-                                    // IMPORTANT:
-                                    // FloatArray? -> check null first
-                                    if (savedEmbedding == null) {
+                                    if (registeredUsers.isEmpty()) {
 
                                         Log.e(
                                             "FaceVerification",
-                                            "No registered embedding found."
+                                            "No registered users found."
                                         )
 
                                         verificationMessage =
-                                            "No registered face found."
+                                            "No registered users found."
 
-                                        isVerifying = false
-
-                                        return@launch
-                                    }
-
-                                    if (savedEmbedding.size != 128) {
-
-                                        Log.e(
-                                            "FaceVerification",
-                                            "Invalid saved embedding size: ${savedEmbedding.size}"
-                                        )
-
-                                        verificationMessage =
-                                            "Invalid registered face data."
-
-                                        isVerifying = false
+                                        isVerifying =
+                                            false
 
                                         return@launch
                                     }
 
                                     Log.d(
                                         "FaceVerification",
-                                        "Saved embedding size: ${savedEmbedding.size}"
+                                        "Registered users: ${registeredUsers.size}"
                                     )
 
                                     // --------------------------------------------------
-                                    // 5. COSINE SIMILARITY
+                                    // 5. COMPARE WITH ALL USERS
                                     // --------------------------------------------------
 
-                                    val similarity =
-                                        faceNetRecognizer.cosineSimilarity(
-                                            currentEmbedding,
-                                            savedEmbedding
+                                    val threshold =
+                                        0.70f
+
+                                    var matchedUser:
+                                            UserData? = null
+
+                                    var highestSimilarity =
+                                        -1f
+
+                                    for (
+                                    user in registeredUsers
+                                    ) {
+
+                                        val savedEmbedding =
+                                            user.faceEmbedding
+
+                                        if (
+                                            savedEmbedding == null
+                                        ) {
+
+                                            Log.w(
+                                                "FaceVerification",
+                                                "No embedding for ${user.name}"
+                                            )
+
+                                            continue
+                                        }
+
+                                        if (
+                                            savedEmbedding.size != 128
+                                        ) {
+
+                                            Log.w(
+                                                "FaceVerification",
+                                                "Invalid embedding for ${user.name}"
+                                            )
+
+                                            continue
+                                        }
+
+                                        val similarity =
+                                            faceNetRecognizer
+                                                .cosineSimilarity(
+                                                    currentEmbedding,
+                                                    savedEmbedding
+                                                )
+
+                                        Log.d(
+                                            "FaceVerification",
+                                            "User: ${user.name}, " +
+                                                    "Similarity: $similarity"
                                         )
+
+                                        if (
+                                            similarity >
+                                            highestSimilarity
+                                        ) {
+
+                                            highestSimilarity =
+                                                similarity
+
+                                            matchedUser =
+                                                user
+                                        }
+                                    }
+
+                                    // --------------------------------------------------
+                                    // 6. LOG MATCH RESULT
+                                    // --------------------------------------------------
 
                                     Log.d(
                                         "FaceVerification",
-                                        "Cosine similarity: $similarity"
+                                        "Highest similarity: $highestSimilarity"
                                     )
-
-                                    // --------------------------------------------------
-                                    // 6. THRESHOLD
-                                    // --------------------------------------------------
-
-                                    val threshold = 0.70f
 
                                     Log.d(
                                         "FaceVerification",
@@ -414,23 +501,48 @@ fun ExistingUserScreen(
                                     )
 
                                     // --------------------------------------------------
-                                    // 7. VERIFY
+                                    // 7. VERIFY MATCH
                                     // --------------------------------------------------
 
-                                    if (similarity >= threshold) {
+                                    if (
+                                        matchedUser != null &&
+                                        highestSimilarity >= threshold
+                                    ) {
+
+                                        val user =
+                                            matchedUser!!
 
                                         Log.d(
                                             "FaceVerification",
                                             "FACE MATCH"
                                         )
 
-                                        verificationMessage =
-                                            "Face verified successfully!"
+                                        Log.d(
+                                            "FaceVerification",
+                                            "Matched user ID: ${user.userId}"
+                                        )
 
-                                        isVerifying = false
+                                        Log.d(
+                                            "FaceVerification",
+                                            "Matched user name: ${user.name}"
+                                        )
 
                                         // --------------------------------------------------
-                                        // 8. GO TO NEXT SCREEN
+                                        // 8. SET MATCHED USER AS CURRENT USER
+                                        // --------------------------------------------------
+
+                                        userStorage.setCurrentUser(
+                                            user
+                                        )
+
+                                        verificationMessage =
+                                            "Welcome, ${user.name}!"
+
+                                        isVerifying =
+                                            false
+
+                                        // --------------------------------------------------
+                                        // 9. GO TO DASHBOARD
                                         // --------------------------------------------------
 
                                         navController.navigate(
@@ -447,7 +559,8 @@ fun ExistingUserScreen(
                                         verificationMessage =
                                             "Face not recognized. Please try again."
 
-                                        isVerifying = false
+                                        isVerifying =
+                                            false
                                     }
 
                                 } catch (e: Exception) {
@@ -461,13 +574,15 @@ fun ExistingUserScreen(
                                     verificationMessage =
                                         "Face verification failed."
 
-                                    isVerifying = false
+                                    isVerifying =
+                                        false
                                 }
                             }
                         }
 
                         override fun onError(
-                            exception: ImageCaptureException
+                            exception:
+                            ImageCaptureException
                         ) {
 
                             Log.e(
@@ -479,7 +594,8 @@ fun ExistingUserScreen(
                             verificationMessage =
                                 "Unable to capture face."
 
-                            isVerifying = false
+                            isVerifying =
+                                false
                         }
                     }
                 )
@@ -498,6 +614,7 @@ fun ExistingUserScreen(
         ) {
 
             Text(
+
                 text =
                     if (isVerifying)
                         "Verifying..."

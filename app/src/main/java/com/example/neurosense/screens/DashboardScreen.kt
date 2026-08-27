@@ -1,108 +1,128 @@
 package com.example.neurosense.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.neurosense.data.SensorData
-import com.example.neurosense.data.SimulatedSensorRepository
-import kotlinx.coroutines.delay
-import kotlin.math.sqrt
+import com.example.neurosense.data.UserStorage
+
+data class DemoSensor(
+    val name: String,
+    val value: String,
+    val status: String
+)
 
 @Composable
 fun DashboardScreen(
     navController: NavController
 ) {
 
-    val repository = remember {
-        SimulatedSensorRepository()
-    }
+    // --------------------------------------------------
+    // USER STORAGE
+    // --------------------------------------------------
 
-    var sensorData by remember {
-        mutableStateOf(
-            repository.getCurrentSensorData()
-        )
-    }
+    val context =
+        LocalContext.current
 
-    /*
-     * Temporary simulated sensor updates.
-     *
-     * Later this will be replaced with
-     * real ESP32/BLE sensor data.
-     */
-    LaunchedEffect(Unit) {
-
-        while (true) {
-
-            sensorData =
-                repository.getCurrentSensorData()
-
-            delay(1000)
+    val userStorage =
+        remember {
+            UserStorage(context)
         }
-    }
 
-    val movementMagnitude =
-        calculateMagnitude(
-            sensorData.bmi270X,
-            sensorData.bmi270Y,
-            sensorData.bmi270Z
-        )
+    // --------------------------------------------------
+    // CURRENT USER DETAILS
+    // --------------------------------------------------
 
-    val accelerationMagnitude =
-        calculateMagnitude(
-            sensorData.mpu9250AccelX,
-            sensorData.mpu9250AccelY,
-            sensorData.mpu9250AccelZ
-        )
+    val userName =
+        userStorage.getName()
 
-    val gyroMagnitude =
-        calculateMagnitude(
-            sensorData.mpu9250GyroX,
-            sensorData.mpu9250GyroY,
-            sensorData.mpu9250GyroZ
-        )
+    val userAge =
+        userStorage.getAge()
 
-    val tremorLevel =
-        calculateTremorLevel(
-            sensorData.bmi270X,
-            sensorData.bmi270Y
-        )
+    val userGender =
+        userStorage.getGender()
 
-    val stability =
-        calculateStability(
-            sensorData.bmi270X,
-            sensorData.bmi270Y
+    // --------------------------------------------------
+    // DEMO SENSOR DATA
+    // --------------------------------------------------
+
+    val sensorData = listOf(
+
+        DemoSensor(
+            "BMI270 - Movement",
+            "9.77",
+            "Normal"
+        ),
+
+        DemoSensor(
+            "BMI270 - Tremor",
+            "Elevated",
+            "Needs attention"
+        ),
+
+        DemoSensor(
+            "BMI270 - Stability",
+            "Unstable",
+            "Needs attention"
+        ),
+
+        DemoSensor(
+            "MPU9250 - Acceleration",
+            "9.67 m/s²",
+            "Normal"
+        ),
+
+        DemoSensor(
+            "MPU9250 - Gyroscope",
+            "2.27",
+            "Normal"
+        ),
+
+        DemoSensor(
+            "MPU9250 - Orientation",
+            "-23.41°, -9.87°, 24.60°",
+            "Normal"
+        ),
+
+        DemoSensor(
+            "FSR402 - Force",
+            "4.82 N",
+            "Normal"
+        ),
+
+        DemoSensor(
+            "FlexiForce A201 - Pressure",
+            "38.6 kPa",
+            "Normal"
         )
+    )
+
+    // --------------------------------------------------
+    // DASHBOARD
+    // --------------------------------------------------
 
     LazyColumn(
+
         modifier = Modifier
             .fillMaxSize()
             .padding(20.dp),
+
         verticalArrangement =
             Arrangement.spacedBy(16.dp)
+
     ) {
+
+        // --------------------------------------------------
+        // HEADER
+        // --------------------------------------------------
 
         item {
 
@@ -110,11 +130,13 @@ fun DashboardScreen(
                 text = "NeuroSense",
                 style =
                     MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight =
+                    FontWeight.Bold
             )
 
             Spacer(
-                modifier = Modifier.height(4.dp)
+                modifier =
+                    Modifier.height(4.dp)
             )
 
             Text(
@@ -124,10 +146,83 @@ fun DashboardScreen(
             )
         }
 
+        // --------------------------------------------------
+        // USER PROFILE
+        // --------------------------------------------------
+
         item {
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth(),
+
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor =
+                            MaterialTheme
+                                .colorScheme
+                                .secondaryContainer
+                    )
+            ) {
+
+                Column(
+                    modifier =
+                        Modifier.padding(18.dp)
+                ) {
+
+                    Text(
+                        text = "User Profile",
+                        fontSize = 20.sp,
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(10.dp)
+                    )
+
+                    Text(
+                        text =
+                            "Name: $userName",
+                        fontSize = 16.sp
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(5.dp)
+                    )
+
+                    Text(
+                        text =
+                            "Age: $userAge",
+                        fontSize = 16.sp
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(5.dp)
+                    )
+
+                    Text(
+                        text =
+                            "Gender: $userGender",
+                        fontSize = 16.sp
+                    )
+                }
+            }
+        }
+
+        // --------------------------------------------------
+        // TODAY'S REPORT
+        // --------------------------------------------------
+
+        item {
+
+            Card(
+                modifier =
+                    Modifier.fillMaxWidth(),
+
                 colors =
                     CardDefaults.cardColors(
                         containerColor =
@@ -156,7 +251,7 @@ fun DashboardScreen(
 
                     Text(
                         text =
-                            "Current simulated sensor readings are being displayed for testing."
+                            "Your latest sensor readings are being displayed using simulated demo data."
                     )
 
                     Spacer(
@@ -170,132 +265,43 @@ fun DashboardScreen(
                         fontWeight =
                             FontWeight.SemiBold
                     )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(6.dp)
+                    )
+
+                    Text(
+                        text = "Demo Mode"
+                    )
                 }
             }
         }
 
-        item {
-
-            Text(
-                text = "BMI270",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        item {
-
-            SensorSummaryCard(
-                sensorName = "Movement",
-                value =
-                    String.format(
-                        "%.2f",
-                        movementMagnitude
-                    )
-            )
-        }
-
-        item {
-
-            SensorSummaryCard(
-                sensorName = "Tremor Level",
-                value =
-                    tremorLevel
-            )
-        }
-
-        item {
-
-            SensorSummaryCard(
-                sensorName = "Stability",
-                value =
-                    stability
-            )
-        }
+        // --------------------------------------------------
+        // SENSOR SUMMARY
+        // --------------------------------------------------
 
         item {
 
             Text(
-                text = "MPU9250",
+                text = "Sensor Summary",
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight =
+                    FontWeight.Bold
             )
         }
 
-        item {
+        items(sensorData) { sensor ->
 
             SensorSummaryCard(
-                sensorName =
-                    "Acceleration Magnitude",
-                value =
-                    String.format(
-                        "%.2f",
-                        accelerationMagnitude
-                    )
+                sensor = sensor
             )
         }
 
-        item {
-
-            SensorSummaryCard(
-                sensorName =
-                    "Gyroscope Magnitude",
-                value =
-                    String.format(
-                        "%.2f",
-                        gyroMagnitude
-                    )
-            )
-        }
-
-        item {
-
-            SensorSummaryCard(
-                sensorName =
-                    "Orientation / Magnetometer",
-                value =
-                    String.format(
-                        "%.2f, %.2f, %.2f",
-                        sensorData.mpu9250MagX,
-                        sensorData.mpu9250MagY,
-                        sensorData.mpu9250MagZ
-                    )
-            )
-        }
-
-        item {
-
-            Text(
-                text = "Force & Pressure Sensors",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        item {
-
-            SensorSummaryCard(
-                sensorName = "FSR402 Force",
-                value =
-                    String.format(
-                        "%.2f",
-                        sensorData.fsr402Force
-                    )
-            )
-        }
-
-        item {
-
-            SensorSummaryCard(
-                sensorName =
-                    "FlexiForce A201 Pressure",
-                value =
-                    String.format(
-                        "%.2f",
-                        sensorData.flexiForcePressure
-                    )
-            )
-        }
+        // --------------------------------------------------
+        // SENSOR GRAPHS
+        // --------------------------------------------------
 
         item {
 
@@ -324,7 +330,7 @@ fun DashboardScreen(
 
                     Text(
                         text =
-                            "Graphs for movement, tremor, stability, acceleration, gyroscope, force and pressure will be added here."
+                            "View graphical trends for movement, tremor, stability, acceleration, gyroscope, force and pressure."
                     )
 
                     Spacer(
@@ -333,11 +339,17 @@ fun DashboardScreen(
                     )
 
                     OutlinedButton(
+
                         onClick = {
-                            // Graph screen will be connected later.
+
+                            navController.navigate(
+                                "sensor_graphs"
+                            )
                         },
+
                         modifier =
                             Modifier.fillMaxWidth()
+
                     ) {
 
                         Text(
@@ -348,6 +360,10 @@ fun DashboardScreen(
                 }
             }
         }
+
+        // --------------------------------------------------
+        // PREVIOUS REPORTS
+        // --------------------------------------------------
 
         item {
 
@@ -376,7 +392,7 @@ fun DashboardScreen(
 
                     Text(
                         text =
-                            "Your previous daily sensor reports will be stored here."
+                            "View your previous daily sensor readings and reports."
                     )
 
                     Spacer(
@@ -385,11 +401,14 @@ fun DashboardScreen(
                     )
 
                     OutlinedButton(
+
                         onClick = {
-                            // Firebase reports later.
+                            // We will connect this later.
                         },
+
                         modifier =
                             Modifier.fillMaxWidth()
+
                     ) {
 
                         Text(
@@ -401,18 +420,26 @@ fun DashboardScreen(
             }
         }
 
+        // --------------------------------------------------
+        // NEW ASSESSMENT
+        // --------------------------------------------------
+
         item {
 
             Button(
+
                 onClick = {
+
                     navController.navigate(
                         "questionnaire"
                     )
                 },
+
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .height(55.dp)
+
             ) {
 
                 Text(
@@ -422,6 +449,10 @@ fun DashboardScreen(
                 )
             }
         }
+
+        // --------------------------------------------------
+        // DISCLAIMER
+        // --------------------------------------------------
 
         item {
 
@@ -445,10 +476,13 @@ fun DashboardScreen(
     }
 }
 
+// --------------------------------------------------
+// SENSOR CARD
+// --------------------------------------------------
+
 @Composable
 private fun SensorSummaryCard(
-    sensorName: String,
-    value: String
+    sensor: DemoSensor
 ) {
 
     Card(
@@ -457,86 +491,48 @@ private fun SensorSummaryCard(
     ) {
 
         Row(
+
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
+
             horizontalArrangement =
                 Arrangement.SpaceBetween
+
         ) {
 
-            Text(
-                text = sensorName,
-                fontSize = 17.sp,
-                fontWeight =
-                    FontWeight.SemiBold
-            )
+            Column(
+                modifier =
+                    Modifier.weight(1f)
+            ) {
+
+                Text(
+                    text =
+                        sensor.name,
+                    fontSize = 17.sp,
+                    fontWeight =
+                        FontWeight.SemiBold
+                )
+
+                Spacer(
+                    modifier =
+                        Modifier.height(4.dp)
+                )
+
+                Text(
+                    text =
+                        sensor.status
+                )
+            }
 
             Text(
-                text = value,
-                fontSize = 18.sp,
+                text =
+                    sensor.value,
+                fontSize = 16.sp,
                 fontWeight =
                     FontWeight.Bold
             )
         }
-    }
-}
-
-private fun calculateMagnitude(
-    x: Float,
-    y: Float,
-    z: Float
-): Float {
-
-    return sqrt(
-        (x * x) +
-                (y * y) +
-                (z * z)
-    )
-}
-
-private fun calculateTremorLevel(
-    x: Float,
-    y: Float
-): String {
-
-    val movement =
-        sqrt(
-            (x * x) +
-                    (y * y)
-        )
-
-    return when {
-
-        movement < 0.3f ->
-            "Low"
-
-        movement < 0.7f ->
-            "Moderate"
-
-        else ->
-            "Elevated"
-    }
-}
-
-private fun calculateStability(
-    x: Float,
-    y: Float
-): String {
-
-    val variation =
-        kotlin.math.abs(x) +
-                kotlin.math.abs(y)
-
-    return when {
-
-        variation < 0.6f ->
-            "Stable"
-
-        variation < 1.2f ->
-            "Moderate"
-
-        else ->
-            "Unstable"
     }
 }

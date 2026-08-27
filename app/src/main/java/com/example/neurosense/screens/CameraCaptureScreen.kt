@@ -20,13 +20,16 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.example.neurosense.camera.CameraPreview
+import com.example.neurosense.components.BackButton
 import com.example.neurosense.data.UserStorage
+import com.example.neurosense.data.UserData
 import com.example.neurosense.recognition.FaceImageProcessor
 import com.example.neurosense.recognition.FaceNetRecognizer
 import com.example.neurosense.viewmodel.RegistrationViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 
 @Composable
@@ -39,6 +42,7 @@ fun CameraCaptureScreen(
     val scope = rememberCoroutineScope()
 
     var hasCameraPermission by remember {
+
         mutableStateOf(
             ContextCompat.checkSelfPermission(
                 context,
@@ -59,6 +63,34 @@ fun CameraCaptureScreen(
         mutableStateOf("")
     }
 
+    /*
+     * Existing user found during face matching.
+     */
+    var existingUser by remember {
+        mutableStateOf<UserData?>(null)
+    }
+
+    /*
+     * Show duplicate profile dialog.
+     */
+    var showReplaceDialog by remember {
+        mutableStateOf(false)
+    }
+
+    /*
+     * Store the newly generated embedding temporarily.
+     */
+    var pendingEmbedding by remember {
+        mutableStateOf<FloatArray?>(null)
+    }
+
+    /*
+     * Store the newly captured image temporarily.
+     */
+    var pendingImagePath by remember {
+        mutableStateOf<String?>(null)
+    }
+
     val permissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -67,13 +99,16 @@ fun CameraCaptureScreen(
             hasCameraPermission = granted
 
             if (!granted) {
-                message = "Camera permission is required."
+
+                message =
+                    "Camera permission is required."
             }
         }
 
     LaunchedEffect(Unit) {
 
         if (!hasCameraPermission) {
+
             permissionLauncher.launch(
                 Manifest.permission.CAMERA
             )
@@ -92,25 +127,227 @@ fun CameraCaptureScreen(
         FaceNetRecognizer(context)
     }
 
+    val userStorage = remember {
+        UserStorage(context)
+    }
+
     DisposableEffect(Unit) {
 
         onDispose {
+
             faceProcessor.close()
             faceNetRecognizer.close()
         }
     }
 
+    /*
+     * --------------------------------------------------
+     * REPLACE EXISTING USER
+     * --------------------------------------------------
+     */
+
+    fun replaceExistingUser() {
+
+        val matchedUser = existingUser
+        val embedding = pendingEmbedding
+        val imagePath = pendingImagePath
+
+        if (
+            matchedUser == null ||
+            embedding == null ||
+            imagePath == null
+        ) {
+
+            message =
+                "Unable to replace existing profile."
+
+            return
+        }
+
+        scope.launch {
+
+            try {
+
+                isCapturing = true
+                message = "Replacing profile..."
+
+                /*
+                 * Keep the SAME User ID.
+                 */
+                val userId =
+                    matchedUser.userId
+
+                /*
+                 * Update ViewModel.
+                 */
+                viewModel.userId =
+                    userId
+
+                viewModel.faceImagePath =
+                    imagePath
+
+                viewModel.faceCaptured =
+                    true
+
+                /*
+                 * Replace old information.
+                 */
+                userStorage.updateUser(
+
+                    userId =
+                        userId,
+
+                    name =
+                        viewModel.name,
+
+                    age =
+                        viewModel.age,
+
+                    gender =
+                        viewModel.gender,
+
+                    faceImagePath =
+                        imagePath,
+
+                    embedding =
+                        embedding
+                )
+
+                /*
+                 * Firebase update.
+                 */
+                try {
+
+                    val firestore =
+                        FirebaseFirestore
+                            .getInstance()
+
+                    val userData =
+                        hashMapOf<String, Any>(
+
+                            "userId" to
+                                    userId,
+
+                            "name" to
+                                    viewModel.name,
+
+                            "age" to
+                                    viewModel.age,
+
+                            "gender" to
+                                    viewModel.gender,
+
+                            "faceImagePath" to
+                                    imagePath,
+
+                            "timestamp" to
+                                    System.currentTimeMillis()
+                        )
+
+                    val firebaseSaved =
+                        withTimeoutOrNull(5000L) {
+
+                            firestore
+                                .collection("users")
+                                .document(userId)
+                                .set(userData)
+                                .await()
+
+                            true
+
+                        } ?: false
+
+                    if (firebaseSaved) {
+
+                        Log.d(
+                            "FirebaseRegistration",
+                            "Existing user replaced successfully."
+                        )
+
+                    } else {
+
+                        Log.w(
+                            "FirebaseRegistration",
+                            "Firebase update timed out."
+                        )
+                    }
+
+                } catch (e: Exception) {
+
+                    Log.e(
+                        "FirebaseRegistration",
+                        "Firebase update failed.",
+                        e
+                    )
+                }
+
+                message =
+                    "Profile replaced successfully!"
+
+                isCapturing = false
+
+                /*
+                 * Clear temporary values.
+                 */
+                pendingEmbedding = null
+                pendingImagePath = null
+                existingUser = null
+
+                navController.popBackStack()
+
+            } catch (e: Exception) {
+
+                Log.e(
+                    "FaceRegistration",
+                    "Profile replacement failed.",
+                    e
+                )
+
+                message =
+                    "Failed to replace profile."
+
+                isCapturing = false
+            }
+        }
+    }
+
+    /*
+     * --------------------------------------------------
+     * UI
+     * --------------------------------------------------
+     */
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
 
-        Text(
-            text = "Register Face",
-            fontSize = 24.sp,
+        /*
+         * --------------------------------------------------
+         * BACK BUTTON + TITLE
+         * --------------------------------------------------
+         */
+
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
-        )
+                .padding(
+                    start = 8.dp,
+                    end = 16.dp,
+                    top = 8.dp,
+                    bottom = 8.dp
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            BackButton(
+                navController = navController
+            )
+
+            Text(
+                text = "Register Face",
+                fontSize = 24.sp
+            )
+        }
 
         Box(
             modifier = Modifier
@@ -150,49 +387,54 @@ fun CameraCaptureScreen(
         }
 
         Button(
+
             onClick = {
 
-                val capture = imageCapture
+                val capture =
+                    imageCapture
 
                 if (capture == null) {
 
-                    message = "Camera is not ready."
+                    message =
+                        "Camera is not ready."
 
                     return@Button
                 }
 
                 isCapturing = true
-                message = "Capturing face..."
 
-                val userId =
-                    if (viewModel.userId.isNotEmpty()) {
+                message =
+                    "Capturing face..."
 
-                        viewModel.userId
+                /*
+                 * Do NOT generate a User ID yet.
+                 *
+                 * We first check whether
+                 * this face already exists.
+                 */
 
-                    } else {
+                val temporaryId =
+                    "temp_${System.currentTimeMillis()}"
 
-                        "NS${
-                            System.currentTimeMillis()
-                                .toString()
-                                .takeLast(6)
-                        }"
-                    }
-
-                viewModel.userId = userId
-
-                val file = File(
-                    context.filesDir,
-                    "face_$userId.jpg"
-                )
+                val file =
+                    File(
+                        context.filesDir,
+                        "face_$temporaryId.jpg"
+                    )
 
                 val outputOptions =
-                    ImageCapture.OutputFileOptions
+                    ImageCapture
+                        .OutputFileOptions
                         .Builder(file)
                         .build()
 
                 capture.takePicture(
+
                     outputOptions,
-                    ContextCompat.getMainExecutor(context),
+
+                    ContextCompat.getMainExecutor(
+                        context
+                    ),
 
                     object :
                         ImageCapture.OnImageSavedCallback {
@@ -211,10 +453,14 @@ fun CameraCaptureScreen(
                                         "Image captured."
                                     )
 
+                                    message =
+                                        "Detecting face..."
+
                                     val bitmap =
-                                        BitmapFactory.decodeFile(
-                                            file.absolutePath
-                                        )
+                                        BitmapFactory
+                                            .decodeFile(
+                                                file.absolutePath
+                                            )
 
                                     if (bitmap == null) {
 
@@ -226,27 +472,20 @@ fun CameraCaptureScreen(
                                         return@launch
                                     }
 
-                                    message =
-                                        "Detecting face..."
-
                                     /*
-                                     * Detect exactly one face
-                                     * and crop it.
+                                     * --------------------------------------------------
+                                     * FACE DETECTION
+                                     * --------------------------------------------------
                                      */
+
                                     val croppedFace =
-                                        faceProcessor.cropFace(
-                                            bitmap
-                                        )
+                                        faceProcessor
+                                            .cropFace(bitmap)
 
                                     if (croppedFace == null) {
 
                                         message =
                                             "Face not detected. Show exactly one face."
-
-                                        Log.d(
-                                            "FaceRegistration",
-                                            "Face detection failed."
-                                        )
 
                                         isCapturing = false
 
@@ -259,26 +498,19 @@ fun CameraCaptureScreen(
                                     )
 
                                     message =
-                                        "Generating FaceNet embedding..."
+                                        "Generating face embedding..."
 
                                     /*
-                                     * Generate embedding
-                                     * ONLY from cropped face.
+                                     * --------------------------------------------------
+                                     * FACE EMBEDDING
+                                     * --------------------------------------------------
                                      */
+
                                     val embedding =
-                                        faceNetRecognizer.getEmbedding(
-                                            croppedFace
-                                        )
-
-                                    Log.d(
-                                        "FaceRegistration",
-                                        "Embedding generated."
-                                    )
-
-                                    Log.d(
-                                        "FaceRegistration",
-                                        "Embedding size: ${embedding.size}"
-                                    )
+                                        faceNetRecognizer
+                                            .getEmbedding(
+                                                croppedFace
+                                            )
 
                                     if (embedding.size != 128) {
 
@@ -290,147 +522,284 @@ fun CameraCaptureScreen(
                                         return@launch
                                     }
 
-                                    val userStorage =
-                                        UserStorage(context)
-
-                                    /*
-                                     * Save user information
-                                     * locally.
-                                     */
-                                    userStorage.saveUser(
-                                        userId =
-                                            viewModel.userId,
-
-                                        name =
-                                            viewModel.name,
-
-                                        age =
-                                            viewModel.age,
-
-                                        gender =
-                                            viewModel.gender,
-
-                                        faceImagePath =
-                                            file.absolutePath
-                                    )
-
-                                    /*
-                                     * Save 128-dimensional
-                                     * FaceNet embedding locally.
-                                     */
-                                    userStorage.saveFaceEmbedding(
-                                        embedding
-                                    )
-
-                                    val savedEmbedding =
-                                        userStorage
-                                            .getFaceEmbedding()
-
                                     Log.d(
                                         "FaceRegistration",
-                                        "Saved embedding size: ${
-                                            savedEmbedding?.size ?: 0
-                                        }"
+                                        "Embedding generated: ${embedding.size}"
                                     )
 
-                                    if (
-                                        savedEmbedding == null ||
-                                        savedEmbedding.size != 128
-                                    ) {
+                                    /*
+                                     * --------------------------------------------------
+                                     * CHECK EXISTING FACES
+                                     * --------------------------------------------------
+                                     */
 
-                                        message =
-                                            "Failed to save face embedding."
+                                    message =
+                                        "Checking existing profiles..."
 
-                                        isCapturing = false
+                                    val allUsers =
+                                        userStorage
+                                            .getAllUsers()
 
-                                        return@launch
+                                    var matchedUser:
+                                            UserData? = null
+
+                                    var highestSimilarity =
+                                        0f
+
+                                    for (user in allUsers) {
+
+                                        val storedEmbedding =
+                                            user.faceEmbedding
+
+                                        if (
+                                            storedEmbedding != null &&
+                                            storedEmbedding.size == 128
+                                        ) {
+
+                                            val similarity =
+                                                faceNetRecognizer
+                                                    .cosineSimilarity(
+                                                        embedding,
+                                                        storedEmbedding
+                                                    )
+
+                                            Log.d(
+                                                "FaceMatching",
+                                                "User ${user.userId} similarity = $similarity"
+                                            )
+
+                                            if (
+                                                similarity >
+                                                highestSimilarity
+                                            ) {
+
+                                                highestSimilarity =
+                                                    similarity
+
+                                                matchedUser =
+                                                    user
+                                            }
+                                        }
                                     }
 
                                     /*
                                      * --------------------------------------------------
-                                     * FIREBASE FIRESTORE
+                                     * FACE MATCH THRESHOLD
                                      * --------------------------------------------------
-                                     *
-                                     * Save the registered user's basic details
-                                     * to Firestore.
                                      */
 
-                                    message =
-                                        "Saving user to Firebase..."
+                                    val FACE_MATCH_THRESHOLD =
+                                        0.70f
 
-                                    val firestore =
-                                        FirebaseFirestore
-                                            .getInstance()
+                                    if (
+                                        matchedUser != null &&
+                                        highestSimilarity >=
+                                        FACE_MATCH_THRESHOLD
+                                    ) {
 
-                                    val userData =
-                                        hashMapOf(
-                                            "userId" to viewModel.userId,
-                                            "name" to viewModel.name,
-                                            "age" to viewModel.age,
-                                            "gender" to viewModel.gender,
-                                            "createdAt" to System.currentTimeMillis()
+                                        /*
+                                         * Existing profile found.
+                                         *
+                                         * DON'T SAVE YET.
+                                         */
+
+                                        Log.d(
+                                            "FaceMatching",
+                                            "Existing face found: ${matchedUser!!.userId}"
                                         )
 
-                                    firestore
-                                        .collection("users")
-                                        .document(viewModel.userId)
-                                        .set(userData)
-                                        .await()
+                                        Log.d(
+                                            "FaceMatching",
+                                            "Similarity: $highestSimilarity"
+                                        )
 
-                                    Log.d(
-                                        "FirebaseRegistration",
-                                        "User saved successfully."
-                                    )
+                                        pendingEmbedding =
+                                            embedding
 
-                                    Log.d(
-                                        "FirebaseRegistration",
-                                        "User ID: ${viewModel.userId}"
-                                    )
+                                        pendingImagePath =
+                                            file.absolutePath
 
-                                    /*
-                                     * Update ViewModel.
-                                     */
-                                    viewModel.faceImagePath =
-                                        file.absolutePath
+                                        existingUser =
+                                            matchedUser
 
-                                    viewModel.faceCaptured =
-                                        true
+                                        isCapturing = false
 
-                                    message =
-                                        "Face registered successfully!"
+                                        message =
+                                            ""
 
-                                    Log.d(
-                                        "FaceRegistration",
-                                        "SUCCESS: Face registered."
-                                    )
+                                        showReplaceDialog =
+                                            true
 
-                                    isCapturing = false
+                                    } else {
 
-                                    /*
-                                     * Return to registration screen.
-                                     */
-                                    navController.popBackStack()
+                                        /*
+                                         * --------------------------------------------------
+                                         * NEW USER
+                                         * --------------------------------------------------
+                                         */
+
+                                        Log.d(
+                                            "FaceMatching",
+                                            "No matching face found."
+                                        )
+
+                                        val newUserId =
+                                            if (
+                                                viewModel.userId.isNotEmpty()
+                                            ) {
+
+                                                viewModel.userId
+
+                                            } else {
+
+                                                "NS${
+                                                    System.currentTimeMillis()
+                                                        .toString()
+                                                        .takeLast(6)
+                                                }"
+                                            }
+
+                                        viewModel.userId =
+                                            newUserId
+
+                                        userStorage.saveUser(
+
+                                            userId =
+                                                newUserId,
+
+                                            name =
+                                                viewModel.name,
+
+                                            age =
+                                                viewModel.age,
+
+                                            gender =
+                                                viewModel.gender,
+
+                                            faceImagePath =
+                                                file.absolutePath
+                                        )
+
+                                        userStorage.saveFaceEmbedding(
+                                            embedding
+                                        )
+
+                                        viewModel.faceImagePath =
+                                            file.absolutePath
+
+                                        viewModel.faceCaptured =
+                                            true
+
+                                        message =
+                                            "Face registered successfully!"
+
+                                        /*
+                                         * --------------------------------------------------
+                                         * FIREBASE SAVE
+                                         * --------------------------------------------------
+                                         */
+
+                                        scope.launch {
+
+                                            try {
+
+                                                val firestore =
+                                                    FirebaseFirestore
+                                                        .getInstance()
+
+                                                val userData =
+                                                    hashMapOf<String, Any>(
+
+                                                        "userId" to
+                                                                newUserId,
+
+                                                        "name" to
+                                                                viewModel.name,
+
+                                                        "age" to
+                                                                viewModel.age,
+
+                                                        "gender" to
+                                                                viewModel.gender,
+
+                                                        "faceImagePath" to
+                                                                file.absolutePath,
+
+                                                        "timestamp" to
+                                                                System.currentTimeMillis()
+                                                    )
+
+                                                val firebaseSaved =
+                                                    withTimeoutOrNull(
+                                                        5000L
+                                                    ) {
+
+                                                        firestore
+                                                            .collection(
+                                                                "users"
+                                                            )
+                                                            .document(
+                                                                newUserId
+                                                            )
+                                                            .set(
+                                                                userData
+                                                            )
+                                                            .await()
+
+                                                        true
+
+                                                    } ?: false
+
+                                                if (firebaseSaved) {
+
+                                                    Log.d(
+                                                        "FirebaseRegistration",
+                                                        "User saved successfully."
+                                                    )
+
+                                                } else {
+
+                                                    Log.w(
+                                                        "FirebaseRegistration",
+                                                        "Firebase save timed out."
+                                                    )
+                                                }
+
+                                            } catch (e: Exception) {
+
+                                                Log.e(
+                                                    "FirebaseRegistration",
+                                                    "Firebase save failed.",
+                                                    e
+                                                )
+                                            }
+                                        }
+
+                                        isCapturing = false
+
+                                        navController
+                                            .popBackStack()
+                                    }
 
                                 } catch (e: Exception) {
 
-                                    isCapturing = false
-
-                                    message =
-                                        "Registration failed: ${
-                                            e.message ?: "Unknown error"
-                                        }"
-
                                     Log.e(
                                         "FaceRegistration",
-                                        "Error during registration",
+                                        "Face registration failed.",
                                         e
                                     )
+
+                                    message =
+                                        "Face registration failed."
+
+                                    isCapturing = false
                                 }
                             }
                         }
 
                         override fun onError(
-                            exception: ImageCaptureException
+                            exception:
+                            ImageCaptureException
                         ) {
 
                             isCapturing = false
@@ -440,7 +809,7 @@ fun CameraCaptureScreen(
 
                             Log.e(
                                 "FaceRegistration",
-                                "Camera capture failed",
+                                "Camera capture failed.",
                                 exception
                             )
                         }
@@ -470,5 +839,96 @@ fun CameraCaptureScreen(
                 fontSize = 18.sp
             )
         }
+    }
+
+    /*
+     * --------------------------------------------------
+     * EXISTING PROFILE DIALOG
+     * --------------------------------------------------
+     */
+
+    if (showReplaceDialog) {
+
+        AlertDialog(
+
+            onDismissRequest = {
+
+                /*
+                 * Same as Cancel.
+                 */
+                showReplaceDialog =
+                    false
+
+                pendingEmbedding = null
+                pendingImagePath = null
+                existingUser = null
+
+                message =
+                    "Profile was not changed."
+            },
+
+            title = {
+
+                Text(
+                    text =
+                        "Existing profile found"
+                )
+            },
+
+            text = {
+
+                Text(
+                    text =
+                        "A profile with this face already exists.\n\n" +
+                                "Do you want to replace the old information " +
+                                "with the new details?"
+                )
+            },
+
+            confirmButton = {
+
+                TextButton(
+
+                    onClick = {
+
+                        showReplaceDialog =
+                            false
+
+                        replaceExistingUser()
+                    }
+
+                ) {
+
+                    Text(
+                        text = "Replace"
+                    )
+                }
+            },
+
+            dismissButton = {
+
+                TextButton(
+
+                    onClick = {
+
+                        showReplaceDialog =
+                            false
+
+                        pendingEmbedding = null
+                        pendingImagePath = null
+                        existingUser = null
+
+                        message =
+                            "Profile was not changed."
+                    }
+
+                ) {
+
+                    Text(
+                        text = "Cancel"
+                    )
+                }
+            }
+        )
     }
 }

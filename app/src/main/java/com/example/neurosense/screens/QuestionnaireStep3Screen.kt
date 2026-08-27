@@ -12,12 +12,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.neurosense.components.BackButton
 import com.example.neurosense.components.QuestionCard
 import com.example.neurosense.data.UserStorage
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.tasks.await
-
+import com.example.neurosense.components.BackButton
 @Composable
 fun QuestionnaireStep3Screen(
     navController: NavController
@@ -52,6 +54,25 @@ fun QuestionnaireStep3Screen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
+        // --------------------------------------------------
+        // BACK BUTTON
+        // --------------------------------------------------
+
+        item {
+
+            BackButton(
+                navController = navController
+            )
+
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
+        }
+
+        // --------------------------------------------------
+        // HEADER
+        // --------------------------------------------------
+
         item {
 
             Text(
@@ -84,9 +105,10 @@ fun QuestionnaireStep3Screen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        /*
-         * Display all Step 3 questions.
-         */
+        // --------------------------------------------------
+        // QUESTIONS
+        // --------------------------------------------------
+
         item {
 
             questions.forEach { question ->
@@ -97,15 +119,22 @@ fun QuestionnaireStep3Screen(
                     onAnswerSelected = { answer ->
 
                         answers[question] = answer
+
                         message = ""
                     }
                 )
             }
         }
 
+        // --------------------------------------------------
+        // COMPLETE ASSESSMENT
+        // --------------------------------------------------
+
         item {
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
 
             if (message.isNotEmpty()) {
 
@@ -114,10 +143,13 @@ fun QuestionnaireStep3Screen(
                     color = MaterialTheme.colorScheme.error
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
             }
 
             Button(
+
                 onClick = {
 
                     val unanswered =
@@ -140,9 +172,10 @@ fun QuestionnaireStep3Screen(
 
                         try {
 
-                            /*
-                             * Get registered user ID.
-                             */
+                            // --------------------------------------------------
+                            // GET USER ID
+                            // --------------------------------------------------
+
                             val userStorage =
                                 UserStorage(context)
 
@@ -159,9 +192,10 @@ fun QuestionnaireStep3Screen(
                                 return@launch
                             }
 
-                            /*
-                             * Get Step 1 and Step 2 answers.
-                             */
+                            // --------------------------------------------------
+                            // GET QUESTIONNAIRE DATA
+                            // --------------------------------------------------
+
                             val preferences =
                                 context.getSharedPreferences(
                                     "neurosense_questionnaire",
@@ -170,10 +204,12 @@ fun QuestionnaireStep3Screen(
 
                             var score = 0
 
-                            /*
-                             * STEP 1
-                             */
+                            // --------------------------------------------------
+                            // STEP 1
+                            // --------------------------------------------------
+
                             val step1Questions = listOf(
+
                                 "Do you experience hand tremors?",
                                 "Do you have difficulty maintaining balance while walking?",
                                 "Do you feel muscle stiffness?",
@@ -196,10 +232,12 @@ fun QuestionnaireStep3Screen(
                                 }
                             }
 
-                            /*
-                             * STEP 2
-                             */
+                            // --------------------------------------------------
+                            // STEP 2
+                            // --------------------------------------------------
+
                             val step2Questions = listOf(
+
                                 "Do you find it difficult to perform daily activities?",
                                 "Do you have difficulty walking for a long distance?",
                                 "Do you have difficulty getting up from a chair?",
@@ -220,15 +258,20 @@ fun QuestionnaireStep3Screen(
                                 }
                             }
 
-                            /*
-                             * STEP 3
-                             */
+                            // --------------------------------------------------
+                            // STEP 3
+                            // --------------------------------------------------
+
                             questions.forEach { question ->
 
                                 if (answers[question] == true) {
                                     score++
                                 }
                             }
+
+                            // --------------------------------------------------
+                            // CALCULATE RESULT
+                            // --------------------------------------------------
 
                             val totalQuestions =
                                 step1Questions.size +
@@ -238,9 +281,6 @@ fun QuestionnaireStep3Screen(
                             val percentage =
                                 (score * 100) / totalQuestions
 
-                            /*
-                             * Screening result.
-                             */
                             val result = when {
 
                                 percentage <= 25 ->
@@ -252,40 +292,6 @@ fun QuestionnaireStep3Screen(
                                 else ->
                                     "Higher indication"
                             }
-
-                            /*
-                             * Save assessment to Firebase.
-                             */
-                            val firestore =
-                                FirebaseFirestore.getInstance()
-
-                            val assessmentData =
-                                hashMapOf<String, Any>(
-                                    "userId" to userId,
-                                    "score" to score,
-                                    "totalQuestions" to totalQuestions,
-                                    "percentage" to percentage,
-                                    "result" to result,
-                                    "timestamp" to System.currentTimeMillis()
-                                )
-
-                            firestore
-                                .collection("users")
-                                .document(userId)
-                                .collection("assessments")
-                                .document("latest")
-                                .set(assessmentData)
-                                .await()
-
-                            Log.d(
-                                "FirebaseAssessment",
-                                "Assessment saved successfully."
-                            )
-
-                            Log.d(
-                                "FirebaseAssessment",
-                                "User ID: $userId"
-                            )
 
                             Log.d(
                                 "FirebaseAssessment",
@@ -302,9 +308,68 @@ fun QuestionnaireStep3Screen(
                                 "Result: $result"
                             )
 
-                            /*
-                             * Clear temporary answers.
-                             */
+                            // --------------------------------------------------
+                            // FIREBASE DATA
+                            // --------------------------------------------------
+
+                            val assessmentData =
+                                hashMapOf<String, Any>(
+
+                                    "userId" to userId,
+
+                                    "score" to score,
+
+                                    "totalQuestions" to
+                                            totalQuestions,
+
+                                    "percentage" to
+                                            percentage,
+
+                                    "result" to result,
+
+                                    "timestamp" to
+                                            System.currentTimeMillis()
+                                )
+
+                            // --------------------------------------------------
+                            // SAVE TO FIREBASE
+                            // --------------------------------------------------
+
+                            val firebaseSaved =
+                                withTimeoutOrNull(5000L) {
+
+                                    FirebaseFirestore
+                                        .getInstance()
+                                        .collection("users")
+                                        .document(userId)
+                                        .collection("assessments")
+                                        .document("latest")
+                                        .set(assessmentData)
+                                        .await()
+
+                                    true
+
+                                } ?: false
+
+                            if (firebaseSaved) {
+
+                                Log.d(
+                                    "FirebaseAssessment",
+                                    "Assessment saved successfully."
+                                )
+
+                            } else {
+
+                                Log.w(
+                                    "FirebaseAssessment",
+                                    "Firebase save timed out or failed. Continuing to dashboard."
+                                )
+                            }
+
+                            // --------------------------------------------------
+                            // CLEAR QUESTIONNAIRE DATA
+                            // --------------------------------------------------
+
                             preferences
                                 .edit()
                                 .clear()
@@ -312,10 +377,13 @@ fun QuestionnaireStep3Screen(
 
                             isSaving = false
 
-                            /*
-                             * Go to Dashboard.
-                             */
-                            navController.navigate("dashboard") {
+                            // --------------------------------------------------
+                            // GO TO DASHBOARD
+                            // --------------------------------------------------
+
+                            navController.navigate(
+                                "dashboard"
+                            ) {
 
                                 popUpTo("questionnaire") {
                                     inclusive = true
@@ -324,16 +392,22 @@ fun QuestionnaireStep3Screen(
 
                         } catch (e: Exception) {
 
-                            isSaving = false
-
-                            message =
-                                "Failed to save assessment."
-
                             Log.e(
                                 "FirebaseAssessment",
-                                "Error saving assessment",
+                                "Assessment processing error",
                                 e
                             )
+
+                            isSaving = false
+
+                            navController.navigate(
+                                "dashboard"
+                            ) {
+
+                                popUpTo("questionnaire") {
+                                    inclusive = true
+                                }
+                            }
                         }
                     }
                 },
@@ -357,7 +431,9 @@ fun QuestionnaireStep3Screen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(
+                modifier = Modifier.height(20.dp)
+            )
         }
     }
 }

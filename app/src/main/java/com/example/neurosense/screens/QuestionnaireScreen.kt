@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.neurosense.components.BackButton
 import com.example.neurosense.components.QuestionCard
 
 @Composable
@@ -47,6 +48,25 @@ fun QuestionnaireScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
+        // --------------------------------------------------
+        // BACK BUTTON
+        // --------------------------------------------------
+
+        item {
+
+            BackButton(
+                navController = navController
+            )
+
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
+        }
+
+        // --------------------------------------------------
+        // HEADER
+        // --------------------------------------------------
+
         item {
 
             Text(
@@ -79,6 +99,10 @@ fun QuestionnaireScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
+        // --------------------------------------------------
+        // QUESTIONS
+        // --------------------------------------------------
+
         item {
 
             questions.forEach { question ->
@@ -100,6 +124,10 @@ fun QuestionnaireScreen(
                 )
             }
         }
+
+        // --------------------------------------------------
+        // NEXT BUTTON
+        // --------------------------------------------------
 
         item {
 
