@@ -1,4 +1,3 @@
-
 package com.example.neurosense.screens
 
 import androidx.compose.foundation.Canvas
@@ -9,9 +8,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.neurosense.components.BackButton
+import com.example.neurosense.data.AssessmentData
 
 data class GraphData(
     val name: String,
@@ -24,20 +26,43 @@ fun SensorGraphsScreen(
     navController: NavController
 ) {
 
+    // --------------------------------------------------
+    // GET LATEST ASSESSMENT VALUES
+    // --------------------------------------------------
+
+    val tremor =
+        AssessmentData.tremorValue.toFloat()
+
+    val movement =
+        AssessmentData.movementValue.toFloat()
+
+    val stability =
+        AssessmentData.stabilityValue.toFloat()
+
+    val force =
+        AssessmentData.forceValue.toFloat()
+
+    val pressure =
+        AssessmentData.pressureValue.toFloat()
+
+    // --------------------------------------------------
+    // GRAPH DATA
+    // --------------------------------------------------
+
     val graphs = listOf(
 
         GraphData(
             name = "BMI270 Movement",
             unit = "m/s²",
             values = listOf(
-                8.9f,
-                9.2f,
-                9.7f,
-                10.1f,
-                9.8f,
-                9.5f,
-                10.3f,
-                9.77f
+                movement - 0.8f,
+                movement - 0.4f,
+                movement - 0.2f,
+                movement + 0.3f,
+                movement - 0.1f,
+                movement + 0.2f,
+                movement - 0.3f,
+                movement
             )
         ),
 
@@ -45,29 +70,29 @@ fun SensorGraphsScreen(
             name = "BMI270 Tremor",
             unit = "Tremor Level",
             values = listOf(
-                1.2f,
-                1.8f,
-                2.4f,
-                3.1f,
-                2.8f,
-                3.5f,
-                2.9f,
-                3.2f
+                tremor - 0.6f,
+                tremor - 0.3f,
+                tremor + 0.2f,
+                tremor - 0.1f,
+                tremor + 0.4f,
+                tremor + 0.1f,
+                tremor - 0.2f,
+                tremor
             )
         ),
 
         GraphData(
             name = "BMI270 Stability",
-            unit = "%",
+            unit = "Stability Index",
             values = listOf(
-                92f,
-                89f,
-                85f,
-                82f,
-                87f,
-                84f,
-                80f,
-                83f
+                stability + 0.8f,
+                stability + 0.5f,
+                stability - 0.2f,
+                stability + 0.3f,
+                stability - 0.4f,
+                stability + 0.1f,
+                stability - 0.1f,
+                stability
             )
         ),
 
@@ -75,14 +100,14 @@ fun SensorGraphsScreen(
             name = "MPU9250 Acceleration",
             unit = "m/s²",
             values = listOf(
-                9.1f,
-                9.4f,
-                9.6f,
-                9.8f,
-                9.7f,
-                9.5f,
-                9.9f,
-                9.67f
+                movement - 0.5f,
+                movement - 0.2f,
+                movement + 0.1f,
+                movement + 0.3f,
+                movement - 0.1f,
+                movement + 0.2f,
+                movement - 0.2f,
+                movement
             )
         ),
 
@@ -90,29 +115,14 @@ fun SensorGraphsScreen(
             name = "MPU9250 Gyroscope",
             unit = "rad/s",
             values = listOf(
-                1.2f,
-                1.5f,
-                1.9f,
-                2.2f,
-                2.0f,
-                2.4f,
-                2.1f,
-                2.27f
-            )
-        ),
-
-        GraphData(
-            name = "MPU9250 Orientation",
-            unit = "Degrees",
-            values = listOf(
-                -15f,
-                -18f,
-                -12f,
-                -20f,
-                -17f,
-                -22f,
-                -19f,
-                -23.41f
+                stability - 0.5f,
+                stability - 0.2f,
+                stability + 0.1f,
+                stability + 0.4f,
+                stability + 0.2f,
+                stability + 0.5f,
+                stability + 0.1f,
+                stability
             )
         ),
 
@@ -120,14 +130,14 @@ fun SensorGraphsScreen(
             name = "FSR402 Force",
             unit = "N",
             values = listOf(
-                3.2f,
-                3.8f,
-                4.1f,
-                4.5f,
-                4.8f,
-                4.6f,
-                4.9f,
-                4.82f
+                force - 0.8f,
+                force - 0.5f,
+                force - 0.2f,
+                force + 0.1f,
+                force + 0.4f,
+                force + 0.2f,
+                force + 0.5f,
+                force
             )
         ),
 
@@ -135,78 +145,144 @@ fun SensorGraphsScreen(
             name = "FlexiForce A201 Pressure",
             unit = "kPa",
             values = listOf(
-                31f,
-                34f,
-                36f,
-                39f,
-                38f,
-                41f,
-                39f,
-                38.6f
+                pressure - 5f,
+                pressure - 3f,
+                pressure - 1f,
+                pressure + 2f,
+                pressure - 2f,
+                pressure + 3f,
+                pressure + 1f,
+                pressure
             )
         )
     )
 
+    // --------------------------------------------------
+    // SCREEN
+    // --------------------------------------------------
+
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier =
+            Modifier.fillMaxSize()
     ) {
 
-        Text(
-            text = "Sensor Graphs",
-            fontSize = 28.sp,
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(20.dp)
-        )
+        // --------------------------------------------------
+        // HEADER
+        // --------------------------------------------------
 
-        Text(
-            text = "Daily Sensor Visualization",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(
-                start = 20.dp,
-                end = 20.dp,
-                bottom = 12.dp
+        Column(
+            modifier =
+                Modifier.padding(20.dp)
+        ) {
+
+            BackButton(
+                navController =
+                    navController
             )
-        )
+
+            Spacer(
+                modifier =
+                    Modifier.height(12.dp)
+            )
+
+            Text(
+                text = "Sensor Graphs",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(4.dp)
+            )
+
+            Text(
+                text =
+                    "Daily Sensor Visualization",
+
+                style =
+                    MaterialTheme
+                        .typography
+                        .bodyLarge,
+
+                color =
+                    MaterialTheme
+                        .colorScheme
+                        .onSurfaceVariant
+            )
+        }
+
+        // --------------------------------------------------
+        // GRAPH LIST
+        // --------------------------------------------------
 
         LazyColumn(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(20.dp)
+
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+
+            verticalArrangement =
+                Arrangement.spacedBy(16.dp),
+
+            contentPadding =
+                PaddingValues(20.dp)
         ) {
+
+            // --------------------------------------------------
+            // INFORMATION CARD
+            // --------------------------------------------------
 
             item {
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor =
-                            MaterialTheme.colorScheme.primaryContainer
-                    )
+                    modifier =
+                        Modifier.fillMaxWidth(),
+
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme
+                                    .colorScheme
+                                    .primaryContainer
+                        )
                 ) {
 
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier =
+                            Modifier.padding(16.dp)
                     ) {
 
                         Text(
-                            text = "Demo Data",
-                            style = MaterialTheme.typography.titleMedium
+                            text =
+                                "Assessment Visualization",
+
+                            style =
+                                MaterialTheme
+                                    .typography
+                                    .titleMedium,
+
+                            fontWeight =
+                                FontWeight.Bold
                         )
 
                         Spacer(
-                            modifier = Modifier.height(6.dp)
+                            modifier =
+                                Modifier.height(6.dp)
                         )
 
                         Text(
                             text =
-                                "The graphs currently use simulated sensor readings because the physical sensors are not connected."
+                                "These graphs visualize the latest sensor assessment. The current readings are simulated because the physical sensors have not yet been connected."
                         )
                     }
                 }
             }
+
+            // --------------------------------------------------
+            // GRAPHS
+            // --------------------------------------------------
 
             items(graphs) { graph ->
 
@@ -215,103 +291,156 @@ fun SensorGraphsScreen(
                 )
             }
 
+            // --------------------------------------------------
+            // BACK BUTTON
+            // --------------------------------------------------
+
             item {
 
                 Button(
+
                     onClick = {
+
                         navController.popBackStack()
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(55.dp)
+
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(55.dp)
+
                 ) {
 
                     Text(
-                        text = "Back to Dashboard"
+                        text =
+                            "Back"
                     )
                 }
+            }
+
+            item {
+
+                Spacer(
+                    modifier =
+                        Modifier.height(20.dp)
+                )
             }
         }
     }
 }
+
+// --------------------------------------------------
+// SENSOR GRAPH CARD
+// --------------------------------------------------
 
 @Composable
 private fun SensorGraphCard(
     graph: GraphData
 ) {
 
-    /*
-     * Get the Compose color BEFORE entering Canvas.
-     *
-     * MaterialTheme is @Composable and cannot be
-     * called directly inside the Canvas drawing block.
-     */
     val graphColor =
-        MaterialTheme.colorScheme.primary
+        MaterialTheme
+            .colorScheme
+            .primary
 
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier =
+            Modifier.fillMaxWidth()
     ) {
 
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier =
+                Modifier.padding(16.dp)
         ) {
 
             Text(
-                text = graph.name,
-                fontSize = 19.sp,
-                style = MaterialTheme.typography.titleMedium
+                text =
+                    graph.name,
+
+                fontSize =
+                    19.sp,
+
+                fontWeight =
+                    FontWeight.Bold
             )
 
             Spacer(
-                modifier = Modifier.height(4.dp)
+                modifier =
+                    Modifier.height(4.dp)
             )
 
             Text(
-                text = graph.unit,
+                text =
+                    graph.unit,
+
                 color =
-                    MaterialTheme.colorScheme.onSurfaceVariant
+                    MaterialTheme
+                        .colorScheme
+                        .onSurfaceVariant
             )
 
             Spacer(
-                modifier = Modifier.height(12.dp)
+                modifier =
+                    Modifier.height(12.dp)
             )
 
+            // --------------------------------------------------
+            // GRAPH
+            // --------------------------------------------------
+
             Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
+
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+
             ) {
 
-                val values = graph.values
+                val values =
+                    graph.values
 
                 if (values.size < 2) {
                     return@Canvas
                 }
 
                 val minValue =
-                    values.minOrNull() ?: 0f
+                    values.minOrNull()
+                        ?: 0f
 
                 val maxValue =
-                    values.maxOrNull() ?: 1f
+                    values.maxOrNull()
+                        ?: 1f
 
                 val range =
-                    if (maxValue - minValue == 0f) {
+                    if (
+                        maxValue - minValue == 0f
+                    ) {
+
                         1f
+
                     } else {
+
                         maxValue - minValue
                     }
 
-                val width = size.width
-                val height = size.height
+                val width =
+                    size.width
+
+                val height =
+                    size.height
 
                 val stepX =
-                    width / (values.size - 1)
+                    width /
+                            (values.size - 1)
 
-                /*
-                 * Draw graph lines.
-                 */
-                for (i in 0 until values.size - 1) {
+                // --------------------------------------------------
+                // GRAPH LINE
+                // --------------------------------------------------
+
+                for (
+                i in 0 until values.size - 1
+                ) {
 
                     val x1 =
                         i * stepX
@@ -321,58 +450,93 @@ private fun SensorGraphCard(
 
                     val y1 =
                         height -
-                                ((values[i] - minValue) / range) *
+                                (
+                                        (values[i] -
+                                                minValue) /
+                                                range
+                                        ) *
                                 height
 
                     val y2 =
                         height -
-                                ((values[i + 1] - minValue) / range) *
+                                (
+                                        (values[i + 1] -
+                                                minValue) /
+                                                range
+                                        ) *
                                 height
 
                     drawLine(
-                        color = graphColor,
-                        start = Offset(
-                            x1,
-                            y1
-                        ),
-                        end = Offset(
-                            x2,
-                            y2
-                        ),
-                        strokeWidth = 6f
+
+                        color =
+                            graphColor,
+
+                        start =
+                            Offset(
+                                x1,
+                                y1
+                            ),
+
+                        end =
+                            Offset(
+                                x2,
+                                y2
+                            ),
+
+                        strokeWidth =
+                            6f
                     )
                 }
 
-                /*
-                 * Draw data points.
-                 */
-                values.forEachIndexed { index, value ->
+                // --------------------------------------------------
+                // DATA POINTS
+                // --------------------------------------------------
+
+                values.forEachIndexed {
+                        index,
+                        value ->
 
                     val x =
                         index * stepX
 
                     val y =
                         height -
-                                ((value - minValue) / range) *
+                                (
+                                        (value -
+                                                minValue) /
+                                                range
+                                        ) *
                                 height
 
                     drawCircle(
-                        color = graphColor,
-                        radius = 6f,
-                        center = Offset(
-                            x,
-                            y
-                        )
+
+                        color =
+                            graphColor,
+
+                        radius =
+                            6f,
+
+                        center =
+                            Offset(
+                                x,
+                                y
+                            )
                     )
                 }
             }
 
             Spacer(
-                modifier = Modifier.height(8.dp)
+                modifier =
+                    Modifier.height(8.dp)
             )
 
+            // --------------------------------------------------
+            // LATEST VALUE
+            // --------------------------------------------------
+
             val latest =
-                graph.values.lastOrNull() ?: 0f
+                graph.values.lastOrNull()
+                    ?: 0f
 
             Text(
                 text =
@@ -380,9 +544,15 @@ private fun SensorGraphCard(
                         latest,
                         graph.unit
                     ),
-                style = MaterialTheme.typography.bodyLarge
+
+                style =
+                    MaterialTheme
+                        .typography
+                        .bodyLarge,
+
+                fontWeight =
+                    FontWeight.SemiBold
             )
         }
     }
 }
-

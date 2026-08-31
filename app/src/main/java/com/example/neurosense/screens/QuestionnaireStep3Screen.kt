@@ -19,7 +19,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.tasks.await
-import com.example.neurosense.components.BackButton
 @Composable
 fun QuestionnaireStep3Screen(
     navController: NavController

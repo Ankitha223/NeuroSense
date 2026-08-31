@@ -1,3 +1,4 @@
+
 package com.example.neurosense.data
 
 import android.content.Context
@@ -6,13 +7,21 @@ import org.json.JSONObject
 
 class UserStorage(context: Context) {
 
-    private val preferences = context.getSharedPreferences(
-        "neurosense_users",
-        Context.MODE_PRIVATE
-    )
+    private val preferences =
+        context.getSharedPreferences(
+            "neurosense_users",
+            Context.MODE_PRIVATE
+        )
 
     companion object {
         private const val USERS_KEY = "users"
+
+        private const val CURRENT_USER_ID = "userId"
+        private const val CURRENT_USER_NAME = "name"
+        private const val CURRENT_USER_AGE = "age"
+        private const val CURRENT_USER_GENDER = "gender"
+        private const val CURRENT_USER_FACE_PATH = "faceImagePath"
+        private const val CURRENT_USER_EMBEDDING = "face_embedding"
     }
 
     // --------------------------------------------------
@@ -27,69 +36,118 @@ class UserStorage(context: Context) {
         faceImagePath: String
     ) {
 
+        if (userId.isBlank()) {
+            return
+        }
+
         val users = getUsersJson()
 
-        val user = JSONObject()
+        val newUser = JSONObject()
 
-        user.put("userId", userId)
-        user.put("name", name)
-        user.put("age", age)
-        user.put("gender", gender)
-        user.put("faceImagePath", faceImagePath)
+        newUser.put(
+            "userId",
+            userId
+        )
 
-        // Replace existing user if same ID exists
-        var replaced = false
+        newUser.put(
+            "name",
+            name
+        )
+
+        newUser.put(
+            "age",
+            age
+        )
+
+        newUser.put(
+            "gender",
+            gender
+        )
+
+        newUser.put(
+            "faceImagePath",
+            faceImagePath
+        )
+
+        // --------------------------------------------------
+        // PRESERVE EXISTING EMBEDDING
+        // --------------------------------------------------
+
+        var userFound = false
 
         for (i in 0 until users.length()) {
 
-            val existingUser = users.getJSONObject(i)
+            val existingUser =
+                users.optJSONObject(i)
+                    ?: continue
 
-            if (existingUser.getString("userId") == userId) {
+            if (
+                existingUser.optString(
+                    "userId"
+                ) == userId
+            ) {
 
-                // Preserve existing face embedding
-                if (existingUser.has("faceEmbedding")) {
+                if (
+                    existingUser.has(
+                        "faceEmbedding"
+                    )
+                ) {
 
-                    user.put(
+                    newUser.put(
                         "faceEmbedding",
-                        existingUser.getJSONArray("faceEmbedding")
+                        existingUser.getJSONArray(
+                            "faceEmbedding"
+                        )
                     )
                 }
 
-                users.put(i, user)
+                users.put(
+                    i,
+                    newUser
+                )
 
-                replaced = true
+                userFound = true
 
                 break
             }
         }
 
-        if (!replaced) {
-            users.put(user)
+        // --------------------------------------------------
+        // ADD NEW USER
+        // --------------------------------------------------
+
+        if (!userFound) {
+
+            users.put(
+                newUser
+            )
         }
 
-        saveUsersJson(users)
+        saveUsersJson(
+            users
+        )
 
         // --------------------------------------------------
         // SET CURRENT USER
         // --------------------------------------------------
 
-        preferences.edit()
-            .putString("userId", userId)
-            .putString("name", name)
-            .putString("age", age)
-            .putString("gender", gender)
-            .putString("faceImagePath", faceImagePath)
-            .apply()
+        setCurrentUserDetails(
+            userId = userId,
+            name = name,
+            age = age,
+            gender = gender,
+            faceImagePath = faceImagePath
+        )
     }
 
     // --------------------------------------------------
-    // GET CURRENT USER DETAILS
+    // CURRENT USER DETAILS
     // --------------------------------------------------
 
     fun getUserId(): String {
 
         return preferences.getString(
-            "userId",
+            CURRENT_USER_ID,
             ""
         ) ?: ""
     }
@@ -97,7 +155,7 @@ class UserStorage(context: Context) {
     fun getName(): String {
 
         return preferences.getString(
-            "name",
+            CURRENT_USER_NAME,
             ""
         ) ?: ""
     }
@@ -105,7 +163,7 @@ class UserStorage(context: Context) {
     fun getAge(): String {
 
         return preferences.getString(
-            "age",
+            CURRENT_USER_AGE,
             ""
         ) ?: ""
     }
@@ -113,7 +171,7 @@ class UserStorage(context: Context) {
     fun getGender(): String {
 
         return preferences.getString(
-            "gender",
+            CURRENT_USER_GENDER,
             "Select Gender"
         ) ?: "Select Gender"
     }
@@ -121,15 +179,18 @@ class UserStorage(context: Context) {
     fun getFaceImagePath(): String {
 
         return preferences.getString(
-            "faceImagePath",
+            CURRENT_USER_FACE_PATH,
             ""
         ) ?: ""
     }
 
+    // --------------------------------------------------
+    // CHECK REGISTERED USER
+    // --------------------------------------------------
+
     fun hasRegisteredUser(): Boolean {
 
-        return getUserId().isNotEmpty() &&
-                getFaceImagePath().isNotEmpty()
+        return getUserId().isNotBlank()
     }
 
     // --------------------------------------------------
@@ -140,55 +201,134 @@ class UserStorage(context: Context) {
         user: UserData
     ) {
 
+        setCurrentUserDetails(
+            userId = user.userId,
+            name = user.name,
+            age = user.age,
+            gender = user.gender,
+            faceImagePath = user.faceImagePath
+        )
+
+        // --------------------------------------------------
+        // LOAD THAT USER'S EMBEDDING
+        // --------------------------------------------------
+
+        if (
+            user.faceEmbedding != null &&
+            user.faceEmbedding.size == 128
+        ) {
+
+            saveCurrentUserEmbedding(
+                user.faceEmbedding
+            )
+
+        } else {
+
+            preferences.edit()
+                .remove(
+                    CURRENT_USER_EMBEDDING
+                )
+                .apply()
+        }
+    }
+
+    private fun setCurrentUserDetails(
+        userId: String,
+        name: String,
+        age: String,
+        gender: String,
+        faceImagePath: String
+    ) {
+
         preferences.edit()
             .putString(
-                "userId",
-                user.userId
+                CURRENT_USER_ID,
+                userId
             )
             .putString(
-                "name",
-                user.name
+                CURRENT_USER_NAME,
+                name
             )
             .putString(
-                "age",
-                user.age
+                CURRENT_USER_AGE,
+                age
             )
             .putString(
-                "gender",
-                user.gender
+                CURRENT_USER_GENDER,
+                gender
             )
             .putString(
-                "faceImagePath",
-                user.faceImagePath
+                CURRENT_USER_FACE_PATH,
+                faceImagePath
             )
             .apply()
     }
 
     // --------------------------------------------------
-    // FACENET EMBEDDING
+    // SAVE FACENET EMBEDDING
     // --------------------------------------------------
 
     fun saveFaceEmbedding(
         embedding: FloatArray
     ) {
 
-        val userId = getUserId()
+        val userId =
+            getUserId()
 
-        if (userId.isEmpty()) {
+        if (userId.isBlank()) {
             return
         }
 
-        val users = getUsersJson()
+        saveFaceEmbeddingForUser(
+            userId = userId,
+            embedding = embedding
+        )
+
+        // --------------------------------------------------
+        // SAVE AS CURRENT USER EMBEDDING
+        // --------------------------------------------------
+
+        saveCurrentUserEmbedding(
+            embedding
+        )
+    }
+
+    // --------------------------------------------------
+    // SAVE EMBEDDING FOR SPECIFIC USER
+    // --------------------------------------------------
+
+    fun saveFaceEmbeddingForUser(
+        userId: String,
+        embedding: FloatArray
+    ) {
+
+        if (
+            userId.isBlank() ||
+            embedding.size != 128
+        ) {
+            return
+        }
+
+        val users =
+            getUsersJson()
 
         for (i in 0 until users.length()) {
 
-            val user = users.getJSONObject(i)
+            val user =
+                users.optJSONObject(i)
+                    ?: continue
 
-            if (user.getString("userId") == userId) {
+            if (
+                user.optString(
+                    "userId"
+                ) == userId
+            ) {
 
                 user.put(
                     "faceEmbedding",
-                    embeddingToJsonArray(embedding)
+                    embeddingToJsonArray(
+                        embedding
+                    )
                 )
 
                 users.put(
@@ -200,22 +340,9 @@ class UserStorage(context: Context) {
             }
         }
 
-        saveUsersJson(users)
-
-        // --------------------------------------------------
-        // OLD EMBEDDING KEY
-        // Keep this for compatibility
-        // --------------------------------------------------
-
-        val embeddingString =
-            embedding.joinToString(",")
-
-        preferences.edit()
-            .putString(
-                "face_embedding",
-                embeddingString
-            )
-            .apply()
+        saveUsersJson(
+            users
+        )
     }
 
     // --------------------------------------------------
@@ -226,22 +353,35 @@ class UserStorage(context: Context) {
 
         val embeddingString =
             preferences.getString(
-                "face_embedding",
+                CURRENT_USER_EMBEDDING,
                 null
             )
 
-        if (embeddingString.isNullOrEmpty()) {
+        if (
+            embeddingString.isNullOrBlank()
+        ) {
             return null
         }
 
         return try {
 
-            embeddingString
-                .split(",")
-                .map {
-                    it.toFloat()
-                }
-                .toFloatArray()
+            val values =
+                embeddingString
+                    .split(",")
+
+            if (
+                values.size != 128
+            ) {
+                return null
+            }
+
+            FloatArray(
+                values.size
+            ) { index ->
+
+                values[index]
+                    .toFloat()
+            }
 
         } catch (e: Exception) {
 
@@ -250,6 +390,10 @@ class UserStorage(context: Context) {
             null
         }
     }
+
+    // --------------------------------------------------
+    // CHECK CURRENT USER EMBEDDING
+    // --------------------------------------------------
 
     fun hasFaceEmbedding(): Boolean {
 
@@ -266,7 +410,8 @@ class UserStorage(context: Context) {
 
     fun getAllUsers(): List<UserData> {
 
-        val users = getUsersJson()
+        val users =
+            getUsersJson()
 
         val result =
             mutableListOf<UserData>()
@@ -277,6 +422,13 @@ class UserStorage(context: Context) {
 
                 val user =
                     users.getJSONObject(i)
+
+                val embedding =
+                    jsonArrayToEmbedding(
+                        user.optJSONArray(
+                            "faceEmbedding"
+                        )
+                    )
 
                 result.add(
                     UserData(
@@ -298,7 +450,8 @@ class UserStorage(context: Context) {
 
                         gender =
                             user.optString(
-                                "gender"
+                                "gender",
+                                "Select Gender"
                             ),
 
                         faceImagePath =
@@ -307,11 +460,7 @@ class UserStorage(context: Context) {
                             ),
 
                         faceEmbedding =
-                            jsonArrayToEmbedding(
-                                user.optJSONArray(
-                                    "faceEmbedding"
-                                )
-                            )
+                            embedding
                     )
                 )
 
@@ -332,9 +481,13 @@ class UserStorage(context: Context) {
         userId: String
     ): UserData? {
 
+        if (userId.isBlank()) {
+            return null
+        }
+
         return getAllUsers()
-            .find {
-                it.userId == userId
+            .find { user ->
+                user.userId == userId
             }
     }
 
@@ -351,6 +504,17 @@ class UserStorage(context: Context) {
         embedding: FloatArray
     ) {
 
+        if (
+            userId.isBlank() ||
+            embedding.size != 128
+        ) {
+            return
+        }
+
+        // --------------------------------------------------
+        // UPDATE USER DETAILS
+        // --------------------------------------------------
+
         saveUser(
             userId = userId,
             name = name,
@@ -359,21 +523,73 @@ class UserStorage(context: Context) {
             faceImagePath = faceImagePath
         )
 
-        // Make this user the current user
-        preferences.edit()
-            .putString(
-                "userId",
-                userId
-            )
-            .apply()
+        // --------------------------------------------------
+        // UPDATE EMBEDDING
+        // --------------------------------------------------
 
-        saveFaceEmbedding(
+        saveFaceEmbeddingForUser(
+            userId = userId,
+            embedding = embedding
+        )
+
+        // --------------------------------------------------
+        // MAKE THIS USER CURRENT
+        // --------------------------------------------------
+
+        setCurrentUserDetails(
+            userId = userId,
+            name = name,
+            age = age,
+            gender = gender,
+            faceImagePath = faceImagePath
+        )
+
+        saveCurrentUserEmbedding(
             embedding
         )
     }
 
     // --------------------------------------------------
-    // PRIVATE JSON FUNCTIONS
+    // CLEAR CURRENT USER
+    // --------------------------------------------------
+
+    fun clearCurrentUser() {
+
+        preferences.edit()
+            .remove(CURRENT_USER_ID)
+            .remove(CURRENT_USER_NAME)
+            .remove(CURRENT_USER_AGE)
+            .remove(CURRENT_USER_GENDER)
+            .remove(CURRENT_USER_FACE_PATH)
+            .remove(CURRENT_USER_EMBEDDING)
+            .apply()
+    }
+
+    // --------------------------------------------------
+    // SAVE CURRENT USER EMBEDDING
+    // --------------------------------------------------
+
+    private fun saveCurrentUserEmbedding(
+        embedding: FloatArray
+    ) {
+
+        if (embedding.size != 128) {
+            return
+        }
+
+        val embeddingString =
+            embedding.joinToString(",")
+
+        preferences.edit()
+            .putString(
+                CURRENT_USER_EMBEDDING,
+                embeddingString
+            )
+            .apply()
+    }
+
+    // --------------------------------------------------
+    // GET USERS JSON
     // --------------------------------------------------
 
     private fun getUsersJson(): JSONArray {
@@ -382,7 +598,7 @@ class UserStorage(context: Context) {
             preferences.getString(
                 USERS_KEY,
                 "[]"
-            )
+            ) ?: "[]"
 
         return try {
 
@@ -392,9 +608,15 @@ class UserStorage(context: Context) {
 
         } catch (e: Exception) {
 
+            e.printStackTrace()
+
             JSONArray()
         }
     }
+
+    // --------------------------------------------------
+    // SAVE USERS JSON
+    // --------------------------------------------------
 
     private fun saveUsersJson(
         users: JSONArray
@@ -408,6 +630,10 @@ class UserStorage(context: Context) {
             .apply()
     }
 
+    // --------------------------------------------------
+    // FLOAT ARRAY → JSON ARRAY
+    // --------------------------------------------------
+
     private fun embeddingToJsonArray(
         embedding: FloatArray
     ): JSONArray {
@@ -418,12 +644,16 @@ class UserStorage(context: Context) {
         for (value in embedding) {
 
             array.put(
-                value
+                value.toDouble()
             )
         }
 
         return array
     }
+
+    // --------------------------------------------------
+    // JSON ARRAY → FLOAT ARRAY
+    // --------------------------------------------------
 
     private fun jsonArrayToEmbedding(
         array: JSONArray?
@@ -443,9 +673,9 @@ class UserStorage(context: Context) {
                 array.length()
             ) { index ->
 
-                array.getDouble(
-                    index
-                ).toFloat()
+                array
+                    .getDouble(index)
+                    .toFloat()
             }
 
         } catch (e: Exception) {
@@ -475,3 +705,4 @@ data class UserData(
 
     val faceEmbedding: FloatArray?
 )
+

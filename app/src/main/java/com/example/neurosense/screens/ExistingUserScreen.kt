@@ -1,14 +1,15 @@
+
 package com.example.neurosense.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageCapture.OutputFileOptions
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -19,14 +20,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.exifinterface.media.ExifInterface
 import androidx.navigation.NavController
 import com.example.neurosense.camera.CameraPreview
 import com.example.neurosense.data.UserData
 import com.example.neurosense.data.UserStorage
 import com.example.neurosense.recognition.FaceImageProcessor
 import com.example.neurosense.recognition.FaceNetRecognizer
-import java.io.File
 import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun ExistingUserScreen(
@@ -66,9 +68,13 @@ fun ExistingUserScreen(
         mutableStateOf(false)
     }
 
-    var verificationMessage by remember {
+    var verificationMessageState by remember {
         mutableStateOf("")
     }
+
+    // --------------------------------------------------
+    // CAMERA PERMISSION LAUNCHER
+    // --------------------------------------------------
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
@@ -82,10 +88,14 @@ fun ExistingUserScreen(
 
             if (!granted) {
 
-                verificationMessage =
+                verificationMessageState =
                     "Camera permission is required."
             }
         }
+
+    // --------------------------------------------------
+    // REQUEST CAMERA PERMISSION
+    // --------------------------------------------------
 
     LaunchedEffect(Unit) {
 
@@ -96,6 +106,10 @@ fun ExistingUserScreen(
             )
         }
     }
+
+    // --------------------------------------------------
+    // PREVIEW
+    // --------------------------------------------------
 
     val previewView =
         remember {
@@ -140,6 +154,75 @@ fun ExistingUserScreen(
             faceNetRecognizer.close()
 
             faceProcessor.close()
+        }
+    }
+
+    // --------------------------------------------------
+    // LOAD IMAGE WITH CORRECT ORIENTATION
+    // --------------------------------------------------
+
+    fun loadCorrectlyRotatedBitmap(
+        file: File
+    ): Bitmap? {
+
+        val bitmap =
+            BitmapFactory.decodeFile(
+                file.absolutePath
+            ) ?: return null
+
+        return try {
+
+            val exif =
+                ExifInterface(
+                    file.absolutePath
+                )
+
+            val orientation =
+                exif.getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+
+            val rotationDegrees =
+                when (orientation) {
+
+                    ExifInterface.ORIENTATION_ROTATE_90 ->
+                        90
+
+                    ExifInterface.ORIENTATION_ROTATE_180 ->
+                        180
+
+                    ExifInterface.ORIENTATION_ROTATE_270 ->
+                        270
+
+                    else ->
+                        0
+                }
+
+            Log.d(
+                "FaceVerification",
+                "Image orientation = $orientation"
+            )
+
+            Log.d(
+                "FaceVerification",
+                "Image rotation = $rotationDegrees"
+            )
+
+            faceProcessor.rotateBitmap(
+                bitmap,
+                rotationDegrees
+            )
+
+        } catch (e: Exception) {
+
+            Log.e(
+                "FaceVerification",
+                "Could not read image orientation.",
+                e
+            )
+
+            bitmap
         }
     }
 
@@ -210,12 +293,14 @@ fun ExistingUserScreen(
         // MESSAGE
         // --------------------------------------------------
 
-        if (verificationMessage.isNotEmpty()) {
+        if (
+            verificationMessageState.isNotEmpty()
+        ) {
 
             Text(
 
                 text =
-                    verificationMessage,
+                    verificationMessageState,
 
                 fontSize = 18.sp,
 
@@ -241,7 +326,7 @@ fun ExistingUserScreen(
 
                 if (capture == null) {
 
-                    verificationMessage =
+                    verificationMessageState =
                         "Camera is not ready."
 
                     return@Button
@@ -252,9 +337,10 @@ fun ExistingUserScreen(
                     return@Button
                 }
 
-                isVerifying = true
+                isVerifying =
+                    true
 
-                verificationMessage =
+                verificationMessageState =
                     "Capturing face..."
 
                 // --------------------------------------------------
@@ -268,7 +354,8 @@ fun ExistingUserScreen(
                     )
 
                 val outputOptions =
-                    OutputFileOptions
+                    ImageCapture
+                        .OutputFileOptions
                         .Builder(file)
                         .build()
 
@@ -298,17 +385,17 @@ fun ExistingUserScreen(
                                     // 1. LOAD IMAGE
                                     // --------------------------------------------------
 
-                                    verificationMessage =
+                                    verificationMessageState =
                                         "Reading captured image..."
 
                                     val bitmap =
-                                        BitmapFactory.decodeFile(
-                                            file.absolutePath
+                                        loadCorrectlyRotatedBitmap(
+                                            file
                                         )
 
                                     if (bitmap == null) {
 
-                                        verificationMessage =
+                                        verificationMessageState =
                                             "Could not read captured image."
 
                                         isVerifying =
@@ -322,11 +409,18 @@ fun ExistingUserScreen(
                                         "Captured image loaded."
                                     )
 
+                                    Log.d(
+                                        "FaceVerification",
+                                        "Image size: " +
+                                                "${bitmap.width} x " +
+                                                "${bitmap.height}"
+                                    )
+
                                     // --------------------------------------------------
                                     // 2. DETECT + CROP ONE FACE
                                     // --------------------------------------------------
 
-                                    verificationMessage =
+                                    verificationMessageState =
                                         "Detecting face..."
 
                                     val croppedFace =
@@ -341,7 +435,7 @@ fun ExistingUserScreen(
                                             "No face or multiple faces detected."
                                         )
 
-                                        verificationMessage =
+                                        verificationMessageState =
                                             "Face not detected. Show exactly one face."
 
                                         isVerifying =
@@ -355,11 +449,18 @@ fun ExistingUserScreen(
                                         "Exactly one face detected."
                                     )
 
+                                    Log.d(
+                                        "FaceVerification",
+                                        "Face crop: " +
+                                                "${croppedFace.width} x " +
+                                                "${croppedFace.height}"
+                                    )
+
                                     // --------------------------------------------------
                                     // 3. CURRENT FACENET EMBEDDING
                                     // --------------------------------------------------
 
-                                    verificationMessage =
+                                    verificationMessageState =
                                         "Generating face embedding..."
 
                                     val currentEmbedding =
@@ -369,14 +470,15 @@ fun ExistingUserScreen(
 
                                     Log.d(
                                         "FaceVerification",
-                                        "Current embedding size: ${currentEmbedding.size}"
+                                        "Current embedding size: " +
+                                                currentEmbedding.size
                                     )
 
                                     if (
                                         currentEmbedding.size != 128
                                     ) {
 
-                                        verificationMessage =
+                                        verificationMessageState =
                                             "Invalid face embedding."
 
                                         isVerifying =
@@ -389,20 +491,22 @@ fun ExistingUserScreen(
                                     // 4. GET ALL REGISTERED USERS
                                     // --------------------------------------------------
 
-                                    verificationMessage =
+                                    verificationMessageState =
                                         "Checking registered faces..."
 
                                     val registeredUsers =
                                         userStorage.getAllUsers()
 
-                                    if (registeredUsers.isEmpty()) {
+                                    if (
+                                        registeredUsers.isEmpty()
+                                    ) {
 
                                         Log.e(
                                             "FaceVerification",
                                             "No registered users found."
                                         )
 
-                                        verificationMessage =
+                                        verificationMessageState =
                                             "No registered users found."
 
                                         isVerifying =
@@ -413,7 +517,8 @@ fun ExistingUserScreen(
 
                                     Log.d(
                                         "FaceVerification",
-                                        "Registered users: ${registeredUsers.size}"
+                                        "Registered users: " +
+                                                registeredUsers.size
                                     )
 
                                     // --------------------------------------------------
@@ -424,7 +529,8 @@ fun ExistingUserScreen(
                                         0.70f
 
                                     var matchedUser:
-                                            UserData? = null
+                                            UserData? =
+                                        null
 
                                     var highestSimilarity =
                                         -1f
@@ -442,7 +548,8 @@ fun ExistingUserScreen(
 
                                             Log.w(
                                                 "FaceVerification",
-                                                "No embedding for ${user.name}"
+                                                "No embedding for " +
+                                                        user.name
                                             )
 
                                             continue
@@ -454,7 +561,8 @@ fun ExistingUserScreen(
 
                                             Log.w(
                                                 "FaceVerification",
-                                                "Invalid embedding for ${user.name}"
+                                                "Invalid embedding for " +
+                                                        user.name
                                             )
 
                                             continue
@@ -492,7 +600,8 @@ fun ExistingUserScreen(
 
                                     Log.d(
                                         "FaceVerification",
-                                        "Highest similarity: $highestSimilarity"
+                                        "Highest similarity: " +
+                                                highestSimilarity
                                     )
 
                                     Log.d(
@@ -519,12 +628,14 @@ fun ExistingUserScreen(
 
                                         Log.d(
                                             "FaceVerification",
-                                            "Matched user ID: ${user.userId}"
+                                            "Matched user ID: " +
+                                                    user.userId
                                         )
 
                                         Log.d(
                                             "FaceVerification",
-                                            "Matched user name: ${user.name}"
+                                            "Matched user name: " +
+                                                    user.name
                                         )
 
                                         // --------------------------------------------------
@@ -535,7 +646,7 @@ fun ExistingUserScreen(
                                             user
                                         )
 
-                                        verificationMessage =
+                                        verificationMessageState =
                                             "Welcome, ${user.name}!"
 
                                         isVerifying =
@@ -556,14 +667,16 @@ fun ExistingUserScreen(
                                             "FACE NOT MATCHED"
                                         )
 
-                                        verificationMessage =
+                                        verificationMessageState =
                                             "Face not recognized. Please try again."
 
                                         isVerifying =
                                             false
                                     }
 
-                                } catch (e: Exception) {
+                                } catch (
+                                    e: Exception
+                                ) {
 
                                     Log.e(
                                         "FaceVerification",
@@ -571,7 +684,7 @@ fun ExistingUserScreen(
                                         e
                                     )
 
-                                    verificationMessage =
+                                    verificationMessageState =
                                         "Face verification failed."
 
                                     isVerifying =
@@ -591,7 +704,7 @@ fun ExistingUserScreen(
                                 exception
                             )
 
-                            verificationMessage =
+                            verificationMessageState =
                                 "Unable to capture face."
 
                             isVerifying =
@@ -626,3 +739,4 @@ fun ExistingUserScreen(
         }
     }
 }
+

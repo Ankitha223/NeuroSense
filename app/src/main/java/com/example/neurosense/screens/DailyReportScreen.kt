@@ -1,4 +1,3 @@
-
 package com.example.neurosense.screens
 
 import androidx.compose.foundation.layout.*
@@ -10,6 +9,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.neurosense.components.BackButton
+import com.example.neurosense.data.AssessmentData
 
 data class ReportItem(
     val name: String,
@@ -23,204 +24,446 @@ fun DailyReportScreen(
     navController: NavController
 ) {
 
+    // --------------------------------------------------
+    // GET ASSESSMENT VALUES
+    // --------------------------------------------------
+
+    val tremorValue =
+        AssessmentData.tremorValue
+
+    val movementValue =
+        AssessmentData.movementValue
+
+    val stabilityValue =
+        AssessmentData.stabilityValue
+
+    val forceValue =
+        AssessmentData.forceValue
+
+    val pressureValue =
+        AssessmentData.pressureValue
+
+    // --------------------------------------------------
+    // DETERMINE STATUS
+    // --------------------------------------------------
+
+    val tremorStatus =
+        if (tremorValue > 3.0)
+            "Needs Attention"
+        else
+            "Normal"
+
+    val movementStatus =
+        if (movementValue < 6.0)
+            "Needs Attention"
+        else
+            "Normal"
+
+    val stabilityStatus =
+        if (stabilityValue > 3.5)
+            "Needs Attention"
+        else
+            "Normal"
+
+    val forceStatus =
+        if (forceValue < 3.0)
+            "Needs Attention"
+        else
+            "Normal"
+
+    val pressureStatus =
+        if (
+            pressureValue < 25.0 ||
+            pressureValue > 45.0
+        )
+            "Needs Attention"
+        else
+            "Normal"
+
+    // --------------------------------------------------
+    // REPORT ITEMS
+    // --------------------------------------------------
+
     val reportItems = listOf(
 
         ReportItem(
-            name = "Tremor",
-            reading = "Elevated",
-            status = "Needs Attention",
+            name =
+                "Tremor",
+
+            reading =
+                String.format(
+                    "%.2f",
+                    tremorValue
+                ),
+
+            status =
+                tremorStatus,
+
             explanation =
-                "The simulated tremor reading is higher than the normal demo range."
+                if (
+                    tremorStatus ==
+                    "Normal"
+                ) {
+
+                    "The simulated tremor reading is within the demo range."
+
+                } else {
+
+                    "The simulated tremor reading is higher than the demo reference range."
+                }
         ),
 
         ReportItem(
-            name = "Stability",
-            reading = "83%",
-            status = "Needs Attention",
+            name =
+                "Movement",
+
+            reading =
+                String.format(
+                    "%.2f m/s²",
+                    movementValue
+                ),
+
+            status =
+                movementStatus,
+
             explanation =
-                "The simulated stability value indicates some variation during movement."
+                if (
+                    movementStatus ==
+                    "Normal"
+                ) {
+
+                    "Movement activity is within the expected simulated range."
+
+                } else {
+
+                    "Movement activity is below the simulated reference range."
+                }
         ),
 
         ReportItem(
-            name = "Movement",
-            reading = "9.77 m/s²",
-            status = "Normal",
+            name =
+                "Stability",
+
+            reading =
+                String.format(
+                    "%.2f",
+                    stabilityValue
+                ),
+
+            status =
+                stabilityStatus,
+
             explanation =
-                "Movement activity is within the expected simulated range."
+                if (
+                    stabilityStatus ==
+                    "Normal"
+                ) {
+
+                    "The simulated stability value is within the demo range."
+
+                } else {
+
+                    "The simulated stability value indicates increased movement variation."
+                }
         ),
 
         ReportItem(
-            name = "Acceleration",
-            reading = "9.67 m/s²",
-            status = "Normal",
+            name =
+                "Force",
+
+            reading =
+                String.format(
+                    "%.2f N",
+                    forceValue
+                ),
+
+            status =
+                forceStatus,
+
             explanation =
-                "The simulated acceleration reading is within the expected range."
+                if (
+                    forceStatus ==
+                    "Normal"
+                ) {
+
+                    "The simulated force measurement is within the expected demo range."
+
+                } else {
+
+                    "The simulated force measurement is below the demo reference range."
+                }
         ),
 
         ReportItem(
-            name = "Gyroscope",
-            reading = "2.27 rad/s",
-            status = "Normal",
-            explanation =
-                "The simulated rotational movement is within the demo range."
-        ),
+            name =
+                "Pressure",
 
-        ReportItem(
-            name = "Force",
-            reading = "4.82 N",
-            status = "Normal",
-            explanation =
-                "The simulated force measurement is within the expected demo range."
-        ),
+            reading =
+                String.format(
+                    "%.2f kPa",
+                    pressureValue
+                ),
 
-        ReportItem(
-            name = "Pressure",
-            reading = "38.6 kPa",
-            status = "Normal",
+            status =
+                pressureStatus,
+
             explanation =
-                "The simulated pressure reading is within the expected demo range."
+                if (
+                    pressureStatus ==
+                    "Normal"
+                ) {
+
+                    "The simulated pressure reading is within the expected demo range."
+
+                } else {
+
+                    "The simulated pressure reading is outside the demo reference range."
+                }
         )
     )
 
+    // --------------------------------------------------
+    // OVERALL STATUS
+    // --------------------------------------------------
+
     val attentionCount =
         reportItems.count {
-            it.status == "Needs Attention"
+            it.status ==
+                    "Needs Attention"
         }
 
     val overallStatus =
-        if (attentionCount > 0) {
+        if (attentionCount > 0)
             "Needs Attention"
-        } else {
+        else
             "Normal"
-        }
+
+    // --------------------------------------------------
+    // SCREEN
+    // --------------------------------------------------
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
+
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+
         verticalArrangement =
             Arrangement.spacedBy(16.dp)
+
     ) {
+
+        // --------------------------------------------------
+        // BACK BUTTON
+        // --------------------------------------------------
 
         item {
 
-            Text(
-                text = "Daily Report",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
+            BackButton(
+                navController =
+                    navController
             )
 
             Spacer(
-                modifier = Modifier.height(4.dp)
+                modifier =
+                    Modifier.height(8.dp)
+            )
+        }
+
+        // --------------------------------------------------
+        // HEADER
+        // --------------------------------------------------
+
+        item {
+
+            Text(
+                text =
+                    "Daily Report",
+
+                fontSize =
+                    28.sp,
+
+                fontWeight =
+                    FontWeight.Bold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(4.dp)
             )
 
             Text(
-                text = "NeuroSense Daily Health Summary",
-                style = MaterialTheme.typography.titleMedium
+                text =
+                    "NeuroSense Daily Health Summary",
+
+                style =
+                    MaterialTheme
+                        .typography
+                        .titleMedium
             )
         }
 
+        // --------------------------------------------------
+        // OVERALL STATUS
+        // --------------------------------------------------
+
         item {
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor =
-                        if (overallStatus == "Normal") {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.errorContainer
-                        }
-                )
+
+                modifier =
+                    Modifier.fillMaxWidth(),
+
+                colors =
+                    CardDefaults.cardColors(
+
+                        containerColor =
+                            if (
+                                overallStatus ==
+                                "Normal"
+                            ) {
+
+                                MaterialTheme
+                                    .colorScheme
+                                    .primaryContainer
+
+                            } else {
+
+                                MaterialTheme
+                                    .colorScheme
+                                    .errorContainer
+                            }
+                    )
             ) {
 
                 Column(
-                    modifier = Modifier.padding(18.dp)
+                    modifier =
+                        Modifier.padding(18.dp)
                 ) {
 
                     Text(
-                        text = "Overall Status",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        text =
+                            "Overall Status",
+
+                        fontSize =
+                            18.sp,
+
+                        fontWeight =
+                            FontWeight.Bold
                     )
 
                     Spacer(
-                        modifier = Modifier.height(8.dp)
-                    )
-
-                    Text(
-                        text = overallStatus,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(
-                        modifier = Modifier.height(8.dp)
+                        modifier =
+                            Modifier.height(8.dp)
                     )
 
                     Text(
                         text =
-                            "$attentionCount area(s) require attention based on the demo readings."
+                            overallStatus,
+
+                        fontSize =
+                            24.sp,
+
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(8.dp)
+                    )
+
+                    Text(
+                        text =
+                            "$attentionCount area(s) require attention based on the simulated readings."
                     )
                 }
             }
         }
 
+        // --------------------------------------------------
+        // SUMMARY
+        // --------------------------------------------------
+
         item {
 
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier =
+                    Modifier.fillMaxWidth()
             ) {
 
                 Column(
-                    modifier = Modifier.padding(18.dp)
+                    modifier =
+                        Modifier.padding(18.dp)
                 ) {
 
                     Text(
-                        text = "Today's Summary",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
+                        text =
+                            "Today's Summary",
+
+                        fontSize =
+                            20.sp,
+
+                        fontWeight =
+                            FontWeight.Bold
                     )
 
                     Spacer(
-                        modifier = Modifier.height(8.dp)
+                        modifier =
+                            Modifier.height(8.dp)
                     )
 
                     Text(
                         text =
-                            "Your sensor readings have been reviewed and converted into simple status messages for easier understanding."
+                            "Your latest simulated sensor readings have been reviewed and converted into simple status messages."
                     )
                 }
             }
         }
+
+        // --------------------------------------------------
+        // REPORT ITEMS
+        // --------------------------------------------------
 
         items(reportItems.size) { index ->
 
-            val item = reportItems[index]
-
             ReportItemCard(
-                item = item
+                item =
+                    reportItems[index]
             )
         }
+
+        // --------------------------------------------------
+        // IMPORTANT
+        // --------------------------------------------------
 
         item {
 
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier =
+                    Modifier.fillMaxWidth()
             ) {
 
                 Column(
-                    modifier = Modifier.padding(18.dp)
+                    modifier =
+                        Modifier.padding(18.dp)
                 ) {
 
                     Text(
-                        text = "Important",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        text =
+                            "Important",
+
+                        fontSize =
+                            18.sp,
+
+                        fontWeight =
+                            FontWeight.Bold
                     )
 
                     Spacer(
-                        modifier = Modifier.height(8.dp)
+                        modifier =
+                            Modifier.height(8.dp)
                     )
 
                     Text(
@@ -231,19 +474,71 @@ fun DailyReportScreen(
             }
         }
 
+        // --------------------------------------------------
+        // SENSOR GRAPHS
+        // --------------------------------------------------
+
         item {
 
-            Button(
+            OutlinedButton(
+
                 onClick = {
-                    navController.popBackStack()
+
+                    navController.navigate(
+                        "sensor_graphs"
+                    )
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(55.dp)
+
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(55.dp)
+
             ) {
 
                 Text(
-                    text = "Back to Dashboard"
+                    text =
+                        "View Sensor Graphs"
+                )
+            }
+        }
+
+        // --------------------------------------------------
+        // DASHBOARD
+        // --------------------------------------------------
+
+        item {
+
+            Button(
+
+                onClick = {
+
+                    navController.navigate(
+                        "dashboard"
+                    ) {
+
+                        popUpTo(
+                            "dashboard"
+                        ) {
+                            inclusive =
+                                false
+                        }
+
+                        launchSingleTop =
+                            true
+                    }
+                },
+
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(55.dp)
+
+            ) {
+
+                Text(
+                    text =
+                        "Back to Dashboard"
                 )
             }
         }
@@ -251,11 +546,16 @@ fun DailyReportScreen(
         item {
 
             Spacer(
-                modifier = Modifier.height(20.dp)
+                modifier =
+                    Modifier.height(20.dp)
             )
         }
     }
 }
+
+// --------------------------------------------------
+// REPORT ITEM CARD
+// --------------------------------------------------
 
 @Composable
 private fun ReportItemCard(
@@ -263,55 +563,81 @@ private fun ReportItemCard(
 ) {
 
     val isAttention =
-        item.status == "Needs Attention"
+        item.status ==
+                "Needs Attention"
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor =
-                if (isAttention) {
-                    MaterialTheme.colorScheme.errorContainer
-                } else {
-                    MaterialTheme.colorScheme.surface
-                }
-        )
+
+        modifier =
+            Modifier.fillMaxWidth(),
+
+        colors =
+            CardDefaults.cardColors(
+
+                containerColor =
+                    if (isAttention) {
+
+                        MaterialTheme
+                            .colorScheme
+                            .errorContainer
+
+                    } else {
+
+                        MaterialTheme
+                            .colorScheme
+                            .surface
+                    }
+            )
     ) {
 
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier =
+                Modifier.padding(16.dp)
         ) {
 
             Text(
-                text = item.name,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+                text =
+                    item.name,
+
+                fontSize =
+                    18.sp,
+
+                fontWeight =
+                    FontWeight.Bold
             )
 
             Spacer(
-                modifier = Modifier.height(6.dp)
+                modifier =
+                    Modifier.height(6.dp)
             )
 
             Text(
-                text = "Reading: ${item.reading}"
+                text =
+                    "Reading: ${item.reading}"
             )
 
             Spacer(
-                modifier = Modifier.height(6.dp)
+                modifier =
+                    Modifier.height(6.dp)
             )
 
             Text(
-                text = "Status: ${item.status}",
-                fontWeight = FontWeight.SemiBold
+                text =
+                    "Status: ${item.status}",
+
+                fontWeight =
+                    FontWeight.SemiBold
             )
 
             Spacer(
-                modifier = Modifier.height(6.dp)
+                modifier =
+                    Modifier.height(6.dp)
             )
 
             Text(
-                text = item.explanation
+                text =
+                    item.explanation
             )
         }
     }
 }
-

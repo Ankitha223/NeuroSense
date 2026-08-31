@@ -66,7 +66,7 @@ dependencies {
     // NAVIGATION
     // --------------------------------------------------
 
-    implementation("androidx.navigation:navigation-compose:2.8.0")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
 
     // --------------------------------------------------
     // CAMERA X
@@ -100,6 +100,13 @@ dependencies {
 
     implementation(
         "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2"
+    )
+    // --------------------------------------------------
+// NETWORKING
+// --------------------------------------------------
+
+    implementation(
+        "com.squareup.okhttp3:okhttp:4.12.0"
     )
 
     // --------------------------------------------------

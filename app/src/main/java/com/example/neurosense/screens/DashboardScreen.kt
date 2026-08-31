@@ -1,3 +1,4 @@
+
 package com.example.neurosense.screens
 
 import androidx.compose.foundation.layout.*
@@ -12,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.neurosense.data.AssessmentData
 import com.example.neurosense.data.UserStorage
 
 data class DemoSensor(
@@ -29,13 +31,11 @@ fun DashboardScreen(
     // USER STORAGE
     // --------------------------------------------------
 
-    val context =
-        LocalContext.current
+    val context = LocalContext.current
 
-    val userStorage =
-        remember {
-            UserStorage(context)
-        }
+    val userStorage = remember {
+        UserStorage(context)
+    }
 
     // --------------------------------------------------
     // CURRENT USER DETAILS
@@ -51,59 +51,254 @@ fun DashboardScreen(
         userStorage.getGender()
 
     // --------------------------------------------------
-    // DEMO SENSOR DATA
+    // ASSESSMENT VALUES
     // --------------------------------------------------
 
-    val sensorData = listOf(
+    val tremorValue =
+        AssessmentData.tremorValue
 
-        DemoSensor(
-            "BMI270 - Movement",
-            "9.77",
-            "Normal"
-        ),
+    val movementValue =
+        AssessmentData.movementValue
 
-        DemoSensor(
-            "BMI270 - Tremor",
-            "Elevated",
+    val stabilityValue =
+        AssessmentData.stabilityValue
+
+    val forceValue =
+        AssessmentData.forceValue
+
+    val pressureValue =
+        AssessmentData.pressureValue
+
+    // --------------------------------------------------
+    // CHECK WHETHER ASSESSMENT EXISTS
+    // --------------------------------------------------
+
+    val assessmentCompleted =
+        tremorValue != 0.0 ||
+                movementValue != 0.0 ||
+                stabilityValue != 0.0 ||
+                forceValue != 0.0 ||
+                pressureValue != 0.0
+
+    // --------------------------------------------------
+    // DETERMINE SENSOR STATUS
+    // --------------------------------------------------
+
+    val tremorStatus =
+        if (tremorValue > 3.0)
             "Needs attention"
-        ),
+        else
+            "Normal"
 
-        DemoSensor(
-            "BMI270 - Stability",
-            "Unstable",
+    val movementStatus =
+        if (movementValue < 6.0)
             "Needs attention"
-        ),
-
-        DemoSensor(
-            "MPU9250 - Acceleration",
-            "9.67 m/s²",
+        else
             "Normal"
-        ),
 
-        DemoSensor(
-            "MPU9250 - Gyroscope",
-            "2.27",
+    val stabilityStatus =
+        if (stabilityValue > 3.5)
+            "Needs attention"
+        else
             "Normal"
-        ),
 
-        DemoSensor(
-            "MPU9250 - Orientation",
-            "-23.41°, -9.87°, 24.60°",
+    val forceStatus =
+        if (forceValue < 3.0)
+            "Needs attention"
+        else
             "Normal"
-        ),
 
-        DemoSensor(
-            "FSR402 - Force",
-            "4.82 N",
-            "Normal"
-        ),
-
-        DemoSensor(
-            "FlexiForce A201 - Pressure",
-            "38.6 kPa",
-            "Normal"
+    val pressureStatus =
+        if (
+            pressureValue < 25.0 ||
+            pressureValue > 45.0
         )
-    )
+            "Needs attention"
+        else
+            "Normal"
+
+    // --------------------------------------------------
+    // SENSOR DATA
+    // --------------------------------------------------
+
+    val sensorData =
+        if (assessmentCompleted) {
+
+            listOf(
+
+                DemoSensor(
+                    name = "BMI270 - Movement",
+                    value =
+                        String.format(
+                            "%.2f m/s²",
+                            movementValue
+                        ),
+                    status =
+                        movementStatus
+                ),
+
+                DemoSensor(
+                    name = "BMI270 - Tremor",
+                    value =
+                        String.format(
+                            "%.2f",
+                            tremorValue
+                        ),
+                    status =
+                        tremorStatus
+                ),
+
+                DemoSensor(
+                    name = "BMI270 - Stability",
+                    value =
+                        String.format(
+                            "%.2f",
+                            stabilityValue
+                        ),
+                    status =
+                        stabilityStatus
+                ),
+
+                DemoSensor(
+                    name = "MPU9250 - Acceleration",
+                    value =
+                        String.format(
+                            "%.2f m/s²",
+                            movementValue
+                        ),
+                    status =
+                        movementStatus
+                ),
+
+                DemoSensor(
+                    name = "MPU9250 - Gyroscope",
+                    value =
+                        String.format(
+                            "%.2f rad/s",
+                            stabilityValue
+                        ),
+                    status =
+                        stabilityStatus
+                ),
+
+                DemoSensor(
+                    name = "MPU9250 - Orientation",
+                    value =
+                        "Demo data",
+                    status =
+                        "Normal"
+                ),
+
+                DemoSensor(
+                    name = "FSR402 - Force",
+                    value =
+                        String.format(
+                            "%.2f N",
+                            forceValue
+                        ),
+                    status =
+                        forceStatus
+                ),
+
+                DemoSensor(
+                    name = "FlexiForce A201 - Pressure",
+                    value =
+                        String.format(
+                            "%.2f kPa",
+                            pressureValue
+                        ),
+                    status =
+                        pressureStatus
+                )
+            )
+
+        } else {
+
+            listOf(
+
+                DemoSensor(
+                    name = "BMI270 - Movement",
+                    value = "Not measured",
+                    status = "Pending"
+                ),
+
+                DemoSensor(
+                    name = "BMI270 - Tremor",
+                    value = "Not measured",
+                    status = "Pending"
+                ),
+
+                DemoSensor(
+                    name = "BMI270 - Stability",
+                    value = "Not measured",
+                    status = "Pending"
+                ),
+
+                DemoSensor(
+                    name = "MPU9250 - Acceleration",
+                    value = "Not measured",
+                    status = "Pending"
+                ),
+
+                DemoSensor(
+                    name = "MPU9250 - Gyroscope",
+                    value = "Not measured",
+                    status = "Pending"
+                ),
+
+                DemoSensor(
+                    name = "MPU9250 - Orientation",
+                    value = "Not measured",
+                    status = "Pending"
+                ),
+
+                DemoSensor(
+                    name = "FSR402 - Force",
+                    value = "Not measured",
+                    status = "Pending"
+                ),
+
+                DemoSensor(
+                    name = "FlexiForce A201 - Pressure",
+                    value = "Not measured",
+                    status = "Pending"
+                )
+            )
+        }
+
+    // --------------------------------------------------
+    // OVERALL STATUS
+    // --------------------------------------------------
+
+    val attentionCount =
+        if (assessmentCompleted) {
+
+            listOf(
+                tremorStatus,
+                movementStatus,
+                stabilityStatus,
+                forceStatus,
+                pressureStatus
+            ).count {
+                it == "Needs attention"
+            }
+
+        } else {
+            0
+        }
+
+    val overallStatus =
+        when {
+
+            !assessmentCompleted ->
+                "No assessment"
+
+            attentionCount > 0 ->
+                "Needs Attention"
+
+            else ->
+                "Normal"
+        }
 
     // --------------------------------------------------
     // DASHBOARD
@@ -111,9 +306,10 @@ fun DashboardScreen(
 
     LazyColumn(
 
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(20.dp),
 
         verticalArrangement =
             Arrangement.spacedBy(16.dp)
@@ -128,8 +324,12 @@ fun DashboardScreen(
 
             Text(
                 text = "NeuroSense",
+
                 style =
-                    MaterialTheme.typography.headlineMedium,
+                    MaterialTheme
+                        .typography
+                        .headlineMedium,
+
                 fontWeight =
                     FontWeight.Bold
             )
@@ -140,9 +340,13 @@ fun DashboardScreen(
             )
 
             Text(
-                text = "Daily Health Dashboard",
+                text =
+                    "Daily Health Dashboard",
+
                 style =
-                    MaterialTheme.typography.titleMedium
+                    MaterialTheme
+                        .typography
+                        .titleMedium
             )
         }
 
@@ -153,11 +357,13 @@ fun DashboardScreen(
         item {
 
             Card(
+
                 modifier =
                     Modifier.fillMaxWidth(),
 
                 colors =
                     CardDefaults.cardColors(
+
                         containerColor =
                             MaterialTheme
                                 .colorScheme
@@ -171,8 +377,12 @@ fun DashboardScreen(
                 ) {
 
                     Text(
-                        text = "User Profile",
-                        fontSize = 20.sp,
+                        text =
+                            "User Profile",
+
+                        fontSize =
+                            20.sp,
+
                         fontWeight =
                             FontWeight.Bold
                     )
@@ -185,7 +395,9 @@ fun DashboardScreen(
                     Text(
                         text =
                             "Name: $userName",
-                        fontSize = 16.sp
+
+                        fontSize =
+                            16.sp
                     )
 
                     Spacer(
@@ -196,7 +408,9 @@ fun DashboardScreen(
                     Text(
                         text =
                             "Age: $userAge",
-                        fontSize = 16.sp
+
+                        fontSize =
+                            16.sp
                     )
 
                     Spacer(
@@ -207,7 +421,9 @@ fun DashboardScreen(
                     Text(
                         text =
                             "Gender: $userGender",
-                        fontSize = 16.sp
+
+                        fontSize =
+                            16.sp
                     )
                 }
             }
@@ -220,15 +436,29 @@ fun DashboardScreen(
         item {
 
             Card(
+
                 modifier =
                     Modifier.fillMaxWidth(),
 
                 colors =
                     CardDefaults.cardColors(
+
                         containerColor =
-                            MaterialTheme
-                                .colorScheme
-                                .primaryContainer
+                            if (
+                                overallStatus ==
+                                "Normal"
+                            ) {
+
+                                MaterialTheme
+                                    .colorScheme
+                                    .primaryContainer
+
+                            } else {
+
+                                MaterialTheme
+                                    .colorScheme
+                                    .secondaryContainer
+                            }
                     )
             ) {
 
@@ -238,8 +468,12 @@ fun DashboardScreen(
                 ) {
 
                     Text(
-                        text = "Today's Report",
-                        fontSize = 20.sp,
+                        text =
+                            "Today's Report",
+
+                        fontSize =
+                            20.sp,
+
                         fontWeight =
                             FontWeight.Bold
                     )
@@ -249,31 +483,103 @@ fun DashboardScreen(
                             Modifier.height(8.dp)
                     )
 
-                    Text(
-                        text =
-                            "Your latest sensor readings are being displayed using simulated demo data."
-                    )
+                    if (assessmentCompleted) {
+
+                        Text(
+                            text =
+                                "Your latest simulated sensor assessment has been completed."
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(12.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Overall Status: $overallStatus",
+
+                            fontWeight =
+                                FontWeight.SemiBold
+                        )
+
+                        if (attentionCount > 0) {
+
+                            Spacer(
+                                modifier =
+                                    Modifier.height(6.dp)
+                            )
+
+                            Text(
+                                text =
+                                    "$attentionCount sensor area(s) require attention."
+                            )
+                        }
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(6.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Demo Mode"
+                        )
+
+                    } else {
+
+                        Text(
+                            text =
+                                "No sensor assessment has been completed yet."
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(6.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Start a new assessment to generate sensor readings."
+                        )
+                    }
 
                     Spacer(
                         modifier =
                             Modifier.height(12.dp)
                     )
 
-                    Text(
-                        text =
-                            "Overall Status: Monitoring",
-                        fontWeight =
-                            FontWeight.SemiBold
-                    )
+                    OutlinedButton(
 
-                    Spacer(
+                        onClick = {
+
+                            if (assessmentCompleted) {
+
+                                navController.navigate(
+                                    "daily_report"
+                                )
+
+                            } else {
+
+                                navController.navigate(
+                                    "sensor_assessment"
+                                )
+                            }
+                        },
+
                         modifier =
-                            Modifier.height(6.dp)
-                    )
+                            Modifier.fillMaxWidth()
 
-                    Text(
-                        text = "Demo Mode"
-                    )
+                    ) {
+
+                        Text(
+                            text =
+                                if (assessmentCompleted)
+                                    "View Today's Report"
+                                else
+                                    "Start Assessment"
+                        )
+                    }
                 }
             }
         }
@@ -285,8 +591,12 @@ fun DashboardScreen(
         item {
 
             Text(
-                text = "Sensor Summary",
-                fontSize = 20.sp,
+                text =
+                    "Sensor Summary",
+
+                fontSize =
+                    20.sp,
+
                 fontWeight =
                     FontWeight.Bold
             )
@@ -318,7 +628,10 @@ fun DashboardScreen(
                     Text(
                         text =
                             "Daily Visualization",
-                        fontSize = 20.sp,
+
+                        fontSize =
+                            20.sp,
+
                         fontWeight =
                             FontWeight.Bold
                     )
@@ -380,7 +693,10 @@ fun DashboardScreen(
                     Text(
                         text =
                             "Previous Reports",
-                        fontSize = 20.sp,
+
+                        fontSize =
+                            20.sp,
+
                         fontWeight =
                             FontWeight.Bold
                     )
@@ -392,7 +708,7 @@ fun DashboardScreen(
 
                     Text(
                         text =
-                            "View your previous daily sensor readings and reports."
+                            "View your previous NeuroSense assessment report."
                     )
 
                     Spacer(
@@ -403,7 +719,10 @@ fun DashboardScreen(
                     OutlinedButton(
 
                         onClick = {
-                            // We will connect this later.
+
+                            navController.navigate(
+                                "previous_reports"
+                            )
                         },
 
                         modifier =
@@ -421,6 +740,134 @@ fun DashboardScreen(
         }
 
         // --------------------------------------------------
+        // AI ASSISTANT
+        // --------------------------------------------------
+
+        item {
+
+            Card(
+                modifier =
+                    Modifier.fillMaxWidth()
+            ) {
+
+                Column(
+                    modifier =
+                        Modifier.padding(18.dp)
+                ) {
+
+                    Text(
+                        text =
+                            "AI Assistant",
+
+                        fontSize =
+                            20.sp,
+
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(8.dp)
+                    )
+
+                    Text(
+                        text =
+                            "Ask questions about your NeuroSense assessment and sensor readings."
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(12.dp)
+                    )
+
+                    OutlinedButton(
+
+                        onClick = {
+
+                            navController.navigate(
+                                "chatbot"
+                            )
+                        },
+
+                        modifier =
+                            Modifier.fillMaxWidth()
+                    ) {
+
+                        Text(
+                            text =
+                                "Open AI Assistant"
+                        )
+                    }
+                }
+            }
+        }
+
+        // --------------------------------------------------
+        // DOCTOR CONSULTATION
+        // --------------------------------------------------
+
+        item {
+
+            Card(
+                modifier =
+                    Modifier.fillMaxWidth()
+            ) {
+
+                Column(
+                    modifier =
+                        Modifier.padding(18.dp)
+                ) {
+
+                    Text(
+                        text =
+                            "Doctor Consultation",
+
+                        fontSize =
+                            20.sp,
+
+                        fontWeight =
+                            FontWeight.Bold
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(8.dp)
+                    )
+
+                    Text(
+                        text =
+                            "Describe your health concerns through an anonymous consultation interface."
+                    )
+
+                    Spacer(
+                        modifier =
+                            Modifier.height(12.dp)
+                    )
+
+                    OutlinedButton(
+
+                        onClick = {
+
+                            navController.navigate(
+                                "doctor_consultation"
+                            )
+                        },
+
+                        modifier =
+                            Modifier.fillMaxWidth()
+                    ) {
+
+                        Text(
+                            text =
+                                "Consult Doctor"
+                        )
+                    }
+                }
+            }
+        }
+
+        // --------------------------------------------------
         // NEW ASSESSMENT
         // --------------------------------------------------
 
@@ -431,7 +878,7 @@ fun DashboardScreen(
                 onClick = {
 
                     navController.navigate(
-                        "questionnaire"
+                        "sensor_assessment"
                     )
                 },
 
@@ -445,7 +892,9 @@ fun DashboardScreen(
                 Text(
                     text =
                         "Start New Assessment",
-                    fontSize = 17.sp
+
+                    fontSize =
+                        17.sp
                 )
             }
         }
@@ -464,8 +913,11 @@ fun DashboardScreen(
             Text(
                 text =
                     "NeuroSense provides monitoring support and does not replace professional medical diagnosis.",
+
                 style =
-                    MaterialTheme.typography.bodySmall
+                    MaterialTheme
+                        .typography
+                        .bodySmall
             )
 
             Spacer(
@@ -510,7 +962,10 @@ private fun SensorSummaryCard(
                 Text(
                     text =
                         sensor.name,
-                    fontSize = 17.sp,
+
+                    fontSize =
+                        17.sp,
+
                     fontWeight =
                         FontWeight.SemiBold
                 )
@@ -529,10 +984,14 @@ private fun SensorSummaryCard(
             Text(
                 text =
                     sensor.value,
-                fontSize = 16.sp,
+
+                fontSize =
+                    16.sp,
+
                 fontWeight =
                     FontWeight.Bold
             )
         }
     }
 }
+

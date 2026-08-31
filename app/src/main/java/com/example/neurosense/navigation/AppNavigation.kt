@@ -5,7 +5,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
+import com.example.neurosense.screens.SensorAssessmentScreen
 import com.example.neurosense.screens.CameraCaptureScreen
 import com.example.neurosense.screens.ExistingUserScreen
 import com.example.neurosense.screens.FaceRegistrationScreen
@@ -18,6 +18,9 @@ import com.example.neurosense.viewmodel.RegistrationViewModel
 import com.example.neurosense.screens.DashboardScreen
 import com.example.neurosense.screens.DailyReportScreen
 import com.example.neurosense.screens.SensorGraphsScreen
+import com.example.neurosense.screens.PreviousReportsScreen
+import com.example.neurosense.screens.DoctorConsultationScreen
+import com.example.neurosense.screens.ChatbotScreen
 @Composable
 fun AppNavigation() {
 
@@ -78,6 +81,24 @@ fun AppNavigation() {
 
             DashboardScreen(navController)
         }
+        composable("doctor_consultation") {
+
+            DoctorConsultationScreen(
+                navController = navController
+            )
+        }
+        composable("chatbot") {
+
+            ChatbotScreen(
+                navController = navController
+            )
+        }
+        composable("sensor_assessment") {
+
+            SensorAssessmentScreen(
+                navController = navController
+            )
+        }
         composable("sensor_graphs") {
             SensorGraphsScreen(navController)
         }
@@ -87,5 +108,12 @@ fun AppNavigation() {
                 navController = navController
             )
         }
+        composable("previous_reports") {
+
+            PreviousReportsScreen(
+                navController = navController
+            )
+        }
+
     }
 }
