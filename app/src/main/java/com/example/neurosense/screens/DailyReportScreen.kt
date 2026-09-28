@@ -2,6 +2,7 @@ package com.example.neurosense.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -42,6 +43,17 @@ fun DailyReportScreen(
 
     val pressureValue =
         AssessmentData.pressureValue
+
+    // --------------------------------------------------
+    // CHECK WHETHER ASSESSMENT WAS COMPLETED
+    // --------------------------------------------------
+
+    val assessmentCompleted =
+        tremorValue != 0.0 ||
+                movementValue != 0.0 ||
+                stabilityValue != 0.0 ||
+                forceValue != 0.0 ||
+                pressureValue != 0.0
 
     // --------------------------------------------------
     // DETERMINE STATUS
@@ -100,16 +112,13 @@ fun DailyReportScreen(
                 tremorStatus,
 
             explanation =
-                if (
-                    tremorStatus ==
-                    "Normal"
-                ) {
+                if (tremorStatus == "Normal") {
 
-                    "The simulated tremor reading is within the demo range."
+                    "The simulated tremor reading is within the current demo reference range."
 
                 } else {
 
-                    "The simulated tremor reading is higher than the demo reference range."
+                    "The simulated tremor reading is above the current demo reference range."
                 }
         ),
 
@@ -127,16 +136,13 @@ fun DailyReportScreen(
                 movementStatus,
 
             explanation =
-                if (
-                    movementStatus ==
-                    "Normal"
-                ) {
+                if (movementStatus == "Normal") {
 
-                    "Movement activity is within the expected simulated range."
+                    "Movement activity is within the current simulated reference range."
 
                 } else {
 
-                    "Movement activity is below the simulated reference range."
+                    "Movement activity is below the current simulated reference range."
                 }
         ),
 
@@ -154,16 +160,13 @@ fun DailyReportScreen(
                 stabilityStatus,
 
             explanation =
-                if (
-                    stabilityStatus ==
-                    "Normal"
-                ) {
+                if (stabilityStatus == "Normal") {
 
-                    "The simulated stability value is within the demo range."
+                    "The simulated stability value is within the current demo reference range."
 
                 } else {
 
-                    "The simulated stability value indicates increased movement variation."
+                    "The simulated stability value is above the current demo reference threshold."
                 }
         ),
 
@@ -181,16 +184,13 @@ fun DailyReportScreen(
                 forceStatus,
 
             explanation =
-                if (
-                    forceStatus ==
-                    "Normal"
-                ) {
+                if (forceStatus == "Normal") {
 
-                    "The simulated force measurement is within the expected demo range."
+                    "The simulated force measurement is within the current demo reference range."
 
                 } else {
 
-                    "The simulated force measurement is below the demo reference range."
+                    "The simulated force measurement is below the current demo reference range."
                 }
         ),
 
@@ -208,16 +208,13 @@ fun DailyReportScreen(
                 pressureStatus,
 
             explanation =
-                if (
-                    pressureStatus ==
-                    "Normal"
-                ) {
+                if (pressureStatus == "Normal") {
 
-                    "The simulated pressure reading is within the expected demo range."
+                    "The simulated pressure reading is within the current demo reference range."
 
                 } else {
 
-                    "The simulated pressure reading is outside the demo reference range."
+                    "The simulated pressure reading is outside the current demo reference range."
                 }
         )
     )
@@ -228,15 +225,35 @@ fun DailyReportScreen(
 
     val attentionCount =
         reportItems.count {
-            it.status ==
-                    "Needs Attention"
+            it.status == "Needs Attention"
         }
 
     val overallStatus =
-        if (attentionCount > 0)
+        if (!assessmentCompleted) {
+
+            "No Assessment"
+
+        } else if (attentionCount > 0) {
+
             "Needs Attention"
-        else
+
+        } else {
+
             "Normal"
+        }
+
+    // --------------------------------------------------
+    // ATTENTION AREAS
+    // --------------------------------------------------
+
+    val attentionAreas =
+        reportItems
+            .filter {
+                it.status == "Needs Attention"
+            }
+            .joinToString(", ") {
+                it.name
+            }
 
     // --------------------------------------------------
     // SCREEN
@@ -295,7 +312,7 @@ fun DailyReportScreen(
 
             Text(
                 text =
-                    "NeuroSense Daily Health Summary",
+                    "NeuroSense Daily Assessment Summary",
 
                 style =
                     MaterialTheme
@@ -305,243 +322,469 @@ fun DailyReportScreen(
         }
 
         // --------------------------------------------------
-        // OVERALL STATUS
+        // NO ASSESSMENT MESSAGE
         // --------------------------------------------------
 
-        item {
+        if (!assessmentCompleted) {
 
-            Card(
+            item {
 
-                modifier =
-                    Modifier.fillMaxWidth(),
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth(),
 
-                colors =
-                    CardDefaults.cardColors(
-
-                        containerColor =
-                            if (
-                                overallStatus ==
-                                "Normal"
-                            ) {
-
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
                                 MaterialTheme
                                     .colorScheme
-                                    .primaryContainer
-
-                            } else {
-
-                                MaterialTheme
-                                    .colorScheme
-                                    .errorContainer
-                            }
-                    )
-            ) {
-
-                Column(
-                    modifier =
-                        Modifier.padding(18.dp)
+                                    .secondaryContainer
+                        )
                 ) {
 
-                    Text(
-                        text =
-                            "Overall Status",
-
-                        fontSize =
-                            18.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
-                    )
-
-                    Spacer(
+                    Column(
                         modifier =
-                            Modifier.height(8.dp)
-                    )
-
-                    Text(
-                        text =
-                            overallStatus,
-
-                        fontSize =
-                            24.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
-                    )
-
-                    Spacer(
-                        modifier =
-                            Modifier.height(8.dp)
-                    )
-
-                    Text(
-                        text =
-                            "$attentionCount area(s) require attention based on the simulated readings."
-                    )
-                }
-            }
-        }
-
-        // --------------------------------------------------
-        // SUMMARY
-        // --------------------------------------------------
-
-        item {
-
-            Card(
-                modifier =
-                    Modifier.fillMaxWidth()
-            ) {
-
-                Column(
-                    modifier =
-                        Modifier.padding(18.dp)
-                ) {
-
-                    Text(
-                        text =
-                            "Today's Summary",
-
-                        fontSize =
-                            20.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
-                    )
-
-                    Spacer(
-                        modifier =
-                            Modifier.height(8.dp)
-                    )
-
-                    Text(
-                        text =
-                            "Your latest simulated sensor readings have been reviewed and converted into simple status messages."
-                    )
-                }
-            }
-        }
-
-        // --------------------------------------------------
-        // REPORT ITEMS
-        // --------------------------------------------------
-
-        items(reportItems.size) { index ->
-
-            ReportItemCard(
-                item =
-                    reportItems[index]
-            )
-        }
-
-        // --------------------------------------------------
-        // IMPORTANT
-        // --------------------------------------------------
-
-        item {
-
-            Card(
-                modifier =
-                    Modifier.fillMaxWidth()
-            ) {
-
-                Column(
-                    modifier =
-                        Modifier.padding(18.dp)
-                ) {
-
-                    Text(
-                        text =
-                            "Important",
-
-                        fontSize =
-                            18.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
-                    )
-
-                    Spacer(
-                        modifier =
-                            Modifier.height(8.dp)
-                    )
-
-                    Text(
-                        text =
-                            "This report is based on simulated demo sensor data. NeuroSense provides monitoring support and does not replace professional medical diagnosis."
-                    )
-                }
-            }
-        }
-
-        // --------------------------------------------------
-        // SENSOR GRAPHS
-        // --------------------------------------------------
-
-        item {
-
-            OutlinedButton(
-
-                onClick = {
-
-                    navController.navigate(
-                        "sensor_graphs"
-                    )
-                },
-
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(55.dp)
-
-            ) {
-
-                Text(
-                    text =
-                        "View Sensor Graphs"
-                )
-            }
-        }
-
-        // --------------------------------------------------
-        // DASHBOARD
-        // --------------------------------------------------
-
-        item {
-
-            Button(
-
-                onClick = {
-
-                    navController.navigate(
-                        "dashboard"
+                            Modifier.padding(18.dp)
                     ) {
 
-                        popUpTo(
-                            "dashboard"
+                        Text(
+                            text =
+                                "No Assessment Available",
+
+                            fontSize =
+                                20.sp,
+
+                            fontWeight =
+                                FontWeight.Bold
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Complete a sensor assessment first to generate your daily report."
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(12.dp)
+                        )
+
+                        Button(
+                            onClick = {
+
+                                navController.navigate(
+                                    "sensor_assessment"
+                                )
+                            },
+
+                            modifier =
+                                Modifier.fillMaxWidth()
                         ) {
-                            inclusive =
-                                false
+
+                            Text(
+                                text =
+                                    "Start Sensor Assessment"
+                            )
                         }
-
-                        launchSingleTop =
-                            true
                     }
-                },
+                }
+            }
 
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(55.dp)
+        } else {
 
-            ) {
+            // --------------------------------------------------
+            // OVERALL STATUS
+            // --------------------------------------------------
 
-                Text(
-                    text =
-                        "Back to Dashboard"
+            item {
+
+                Card(
+
+                    modifier =
+                        Modifier.fillMaxWidth(),
+
+                    colors =
+                        CardDefaults.cardColors(
+
+                            containerColor =
+                                if (
+                                    overallStatus ==
+                                    "Normal"
+                                ) {
+
+                                    MaterialTheme
+                                        .colorScheme
+                                        .primaryContainer
+
+                                } else {
+
+                                    MaterialTheme
+                                        .colorScheme
+                                        .errorContainer
+                                }
+                        )
+                ) {
+
+                    Column(
+                        modifier =
+                            Modifier.padding(18.dp)
+                    ) {
+
+                        Text(
+                            text =
+                                "Overall Status",
+
+                            fontSize =
+                                18.sp,
+
+                            fontWeight =
+                                FontWeight.Bold
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                overallStatus,
+
+                            fontSize =
+                                24.sp,
+
+                            fontWeight =
+                                FontWeight.Bold
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                if (attentionCount == 0) {
+
+                                    "All monitored areas are within the current simulated reference ranges."
+
+                                } else {
+
+                                    "$attentionCount area(s) require attention based on the simulated readings."
+                                }
+                        )
+                    }
+                }
+            }
+
+            // --------------------------------------------------
+            // ATTENTION AREAS
+            // --------------------------------------------------
+
+            if (attentionCount > 0) {
+
+                item {
+
+                    Card(
+                        modifier =
+                            Modifier.fillMaxWidth(),
+
+                        colors =
+                            CardDefaults.cardColors(
+                                containerColor =
+                                    MaterialTheme
+                                        .colorScheme
+                                        .secondaryContainer
+                            )
+                    ) {
+
+                        Column(
+                            modifier =
+                                Modifier.padding(18.dp)
+                        ) {
+
+                            Text(
+                                text =
+                                    "Areas to Focus On",
+
+                                fontSize =
+                                    20.sp,
+
+                                fontWeight =
+                                    FontWeight.Bold
+                            )
+
+                            Spacer(
+                                modifier =
+                                    Modifier.height(8.dp)
+                            )
+
+                            Text(
+                                text =
+                                    attentionAreas,
+
+                                fontSize =
+                                    17.sp,
+
+                                fontWeight =
+                                    FontWeight.SemiBold
+                            )
+
+                            Spacer(
+                                modifier =
+                                    Modifier.height(8.dp)
+                            )
+
+                            Text(
+                                text =
+                                    "These areas are highlighted only according to the current demo reference thresholds."
+                            )
+                        }
+                    }
+                }
+            }
+
+            // --------------------------------------------------
+            // SUMMARY
+            // --------------------------------------------------
+
+            item {
+
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                ) {
+
+                    Column(
+                        modifier =
+                            Modifier.padding(18.dp)
+                    ) {
+
+                        Text(
+                            text =
+                                "Today's Summary",
+
+                            fontSize =
+                                20.sp,
+
+                            fontWeight =
+                                FontWeight.Bold
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                if (attentionCount == 0) {
+
+                                    "Your latest simulated sensor readings are currently within the demo reference ranges."
+
+                                } else {
+
+                                    "Your latest simulated sensor readings have been reviewed and the areas requiring attention are highlighted below."
+                                }
+                        )
+                    }
+                }
+            }
+
+            // --------------------------------------------------
+            // REPORT ITEMS
+            // --------------------------------------------------
+
+            items(reportItems) { item ->
+
+                ReportItemCard(
+                    item =
+                        item
                 )
             }
+
+            // --------------------------------------------------
+            // WELLNESS & PREVENTION
+            // --------------------------------------------------
+
+            item {
+
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                ) {
+
+                    Column(
+                        modifier =
+                            Modifier.padding(18.dp)
+                    ) {
+
+                        Text(
+                            text =
+                                "Wellness & Prevention",
+
+                            fontSize =
+                                20.sp,
+
+                            fontWeight =
+                                FontWeight.Bold
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "View general wellness activities selected according to your latest assessment."
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(12.dp)
+                        )
+
+                        OutlinedButton(
+
+                            onClick = {
+
+                                navController.navigate(
+                                    "doctor_consultation"
+                                )
+                            },
+
+                            modifier =
+                                Modifier.fillMaxWidth()
+                        ) {
+
+                            Text(
+                                text =
+                                    "View Wellness Suggestions"
+                            )
+                        }
+                    }
+                }
+            }
+
+            // --------------------------------------------------
+            // IMPORTANT
+            // --------------------------------------------------
+
+            item {
+
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                ) {
+
+                    Column(
+                        modifier =
+                            Modifier.padding(18.dp)
+                    ) {
+
+                        Text(
+                            text =
+                                "Important",
+
+                            fontSize =
+                                18.sp,
+
+                            fontWeight =
+                                FontWeight.Bold
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "This report is based on simulated demo sensor data. NeuroSense provides monitoring and wellness support and does not provide medical diagnosis."
+                        )
+                    }
+                }
+            }
+
+            // --------------------------------------------------
+            // SENSOR GRAPHS
+            // --------------------------------------------------
+
+            item {
+
+                OutlinedButton(
+
+                    onClick = {
+
+                        navController.navigate(
+                            "sensor_graphs"
+                        )
+                    },
+
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(55.dp)
+
+                ) {
+
+                    Text(
+                        text =
+                            "View Sensor Graphs"
+                    )
+                }
+            }
+
+            // --------------------------------------------------
+            // DASHBOARD
+            // --------------------------------------------------
+
+            item {
+
+                Button(
+
+                    onClick = {
+
+                        navController.navigate(
+                            "dashboard"
+                        ) {
+
+                            popUpTo(
+                                "dashboard"
+                            ) {
+
+                                inclusive =
+                                    false
+                            }
+
+                            launchSingleTop =
+                                true
+                        }
+                    },
+
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(55.dp)
+
+                ) {
+
+                    Text(
+                        text =
+                            "Back to Dashboard"
+                    )
+                }
+            }
         }
+
+        // --------------------------------------------------
+        // BOTTOM SPACING
+        // --------------------------------------------------
 
         item {
 

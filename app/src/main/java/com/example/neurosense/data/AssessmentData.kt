@@ -1,6 +1,11 @@
+
 package com.example.neurosense.data
 
 object AssessmentData {
+
+    // --------------------------------------------------
+    // LATEST SENSOR VALUES
+    // --------------------------------------------------
 
     var tremorValue: Double = 0.0
 
@@ -11,4 +16,11 @@ object AssessmentData {
     var forceValue: Double = 0.0
 
     var pressureValue: Double = 0.0
+
+    // --------------------------------------------------
+    // LATEST ASSESSMENT TIME
+    // --------------------------------------------------
+
+    var assessmentTimestamp: Long = 0L
 }
+

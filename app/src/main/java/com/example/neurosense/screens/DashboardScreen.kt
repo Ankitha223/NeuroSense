@@ -1,4 +1,3 @@
-
 package com.example.neurosense.screens
 
 import androidx.compose.foundation.layout.*
@@ -41,33 +40,19 @@ fun DashboardScreen(
     // CURRENT USER DETAILS
     // --------------------------------------------------
 
-    val userName =
-        userStorage.getName()
-
-    val userAge =
-        userStorage.getAge()
-
-    val userGender =
-        userStorage.getGender()
+    val userName = userStorage.getName()
+    val userAge = userStorage.getAge()
+    val userGender = userStorage.getGender()
 
     // --------------------------------------------------
     // ASSESSMENT VALUES
     // --------------------------------------------------
 
-    val tremorValue =
-        AssessmentData.tremorValue
-
-    val movementValue =
-        AssessmentData.movementValue
-
-    val stabilityValue =
-        AssessmentData.stabilityValue
-
-    val forceValue =
-        AssessmentData.forceValue
-
-    val pressureValue =
-        AssessmentData.pressureValue
+    val tremorValue = AssessmentData.tremorValue
+    val movementValue = AssessmentData.movementValue
+    val stabilityValue = AssessmentData.stabilityValue
+    val forceValue = AssessmentData.forceValue
+    val pressureValue = AssessmentData.pressureValue
 
     // --------------------------------------------------
     // CHECK WHETHER ASSESSMENT EXISTS
@@ -85,34 +70,19 @@ fun DashboardScreen(
     // --------------------------------------------------
 
     val tremorStatus =
-        if (tremorValue > 3.0)
-            "Needs attention"
-        else
-            "Normal"
+        if (tremorValue > 3.0) "Needs attention" else "Normal"
 
     val movementStatus =
-        if (movementValue < 6.0)
-            "Needs attention"
-        else
-            "Normal"
+        if (movementValue < 6.0) "Needs attention" else "Normal"
 
     val stabilityStatus =
-        if (stabilityValue > 3.5)
-            "Needs attention"
-        else
-            "Normal"
+        if (stabilityValue > 3.5) "Needs attention" else "Normal"
 
     val forceStatus =
-        if (forceValue < 3.0)
-            "Needs attention"
-        else
-            "Normal"
+        if (forceValue < 3.0) "Needs attention" else "Normal"
 
     val pressureStatus =
-        if (
-            pressureValue < 25.0 ||
-            pressureValue > 45.0
-        )
+        if (pressureValue < 25.0 || pressureValue > 45.0)
             "Needs attention"
         else
             "Normal"
@@ -128,87 +98,50 @@ fun DashboardScreen(
 
                 DemoSensor(
                     name = "BMI270 - Movement",
-                    value =
-                        String.format(
-                            "%.2f m/s²",
-                            movementValue
-                        ),
-                    status =
-                        movementStatus
+                    value = String.format("%.2f m/s²", movementValue),
+                    status = movementStatus
                 ),
 
                 DemoSensor(
                     name = "BMI270 - Tremor",
-                    value =
-                        String.format(
-                            "%.2f",
-                            tremorValue
-                        ),
-                    status =
-                        tremorStatus
+                    value = String.format("%.2f", tremorValue),
+                    status = tremorStatus
                 ),
 
                 DemoSensor(
                     name = "BMI270 - Stability",
-                    value =
-                        String.format(
-                            "%.2f",
-                            stabilityValue
-                        ),
-                    status =
-                        stabilityStatus
+                    value = String.format("%.2f", stabilityValue),
+                    status = stabilityStatus
                 ),
 
                 DemoSensor(
                     name = "MPU9250 - Acceleration",
-                    value =
-                        String.format(
-                            "%.2f m/s²",
-                            movementValue
-                        ),
-                    status =
-                        movementStatus
+                    value = String.format("%.2f m/s²", movementValue),
+                    status = movementStatus
                 ),
 
                 DemoSensor(
                     name = "MPU9250 - Gyroscope",
-                    value =
-                        String.format(
-                            "%.2f rad/s",
-                            stabilityValue
-                        ),
-                    status =
-                        stabilityStatus
+                    value = String.format("%.2f rad/s", stabilityValue),
+                    status = stabilityStatus
                 ),
 
                 DemoSensor(
                     name = "MPU9250 - Orientation",
-                    value =
-                        "Demo data",
-                    status =
-                        "Normal"
+                    value = "Demo data",
+                    status = "Normal"
                 ),
 
                 DemoSensor(
                     name = "FSR402 - Force",
-                    value =
-                        String.format(
-                            "%.2f N",
-                            forceValue
-                        ),
-                    status =
-                        forceStatus
+                    value = String.format("%.2f N", forceValue),
+                    status = forceStatus
                 ),
 
                 DemoSensor(
                     name = "FlexiForce A201 - Pressure",
-                    value =
-                        String.format(
-                            "%.2f kPa",
-                            pressureValue
-                        ),
-                    status =
-                        pressureStatus
+                    value = String.format("%.2f kPa", pressureValue),
+                    status = pressureStatus
                 )
             )
 
@@ -289,15 +222,9 @@ fun DashboardScreen(
 
     val overallStatus =
         when {
-
-            !assessmentCompleted ->
-                "No assessment"
-
-            attentionCount > 0 ->
-                "Needs Attention"
-
-            else ->
-                "Normal"
+            !assessmentCompleted -> "No assessment"
+            attentionCount > 0 -> "Needs Attention"
+            else -> "Normal"
         }
 
     // --------------------------------------------------
@@ -305,15 +232,11 @@ fun DashboardScreen(
     // --------------------------------------------------
 
     LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp),
 
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-
-        verticalArrangement =
-            Arrangement.spacedBy(16.dp)
-
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
         // --------------------------------------------------
@@ -324,29 +247,17 @@ fun DashboardScreen(
 
             Text(
                 text = "NeuroSense",
-
-                style =
-                    MaterialTheme
-                        .typography
-                        .headlineMedium,
-
-                fontWeight =
-                    FontWeight.Bold
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
             )
 
             Spacer(
-                modifier =
-                    Modifier.height(4.dp)
+                modifier = Modifier.height(4.dp)
             )
 
             Text(
-                text =
-                    "Daily Health Dashboard",
-
-                style =
-                    MaterialTheme
-                        .typography
-                        .titleMedium
+                text = "Daily Health Dashboard",
+                style = MaterialTheme.typography.titleMedium
             )
         }
 
@@ -357,73 +268,49 @@ fun DashboardScreen(
         item {
 
             Card(
+                modifier = Modifier.fillMaxWidth(),
 
-                modifier =
-                    Modifier.fillMaxWidth(),
-
-                colors =
-                    CardDefaults.cardColors(
-
-                        containerColor =
-                            MaterialTheme
-                                .colorScheme
-                                .secondaryContainer
-                    )
+                colors = CardDefaults.cardColors(
+                    containerColor =
+                        MaterialTheme.colorScheme.secondaryContainer
+                )
             ) {
 
                 Column(
-                    modifier =
-                        Modifier.padding(18.dp)
+                    modifier = Modifier.padding(18.dp)
                 ) {
 
                     Text(
-                        text =
-                            "User Profile",
-
-                        fontSize =
-                            20.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
+                        text = "User Profile",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(10.dp)
+                        modifier = Modifier.height(10.dp)
                     )
 
                     Text(
-                        text =
-                            "Name: $userName",
-
-                        fontSize =
-                            16.sp
+                        text = "Name: $userName",
+                        fontSize = 16.sp
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(5.dp)
+                        modifier = Modifier.height(5.dp)
                     )
 
                     Text(
-                        text =
-                            "Age: $userAge",
-
-                        fontSize =
-                            16.sp
+                        text = "Age: $userAge",
+                        fontSize = 16.sp
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(5.dp)
+                        modifier = Modifier.height(5.dp)
                     )
 
                     Text(
-                        text =
-                            "Gender: $userGender",
-
-                        fontSize =
-                            16.sp
+                        text = "Gender: $userGender",
+                        fontSize = 16.sp
                     )
                 }
             }
@@ -436,51 +323,30 @@ fun DashboardScreen(
         item {
 
             Card(
+                modifier = Modifier.fillMaxWidth(),
 
-                modifier =
-                    Modifier.fillMaxWidth(),
-
-                colors =
-                    CardDefaults.cardColors(
-
-                        containerColor =
-                            if (
-                                overallStatus ==
-                                "Normal"
-                            ) {
-
-                                MaterialTheme
-                                    .colorScheme
-                                    .primaryContainer
-
-                            } else {
-
-                                MaterialTheme
-                                    .colorScheme
-                                    .secondaryContainer
-                            }
-                    )
+                colors = CardDefaults.cardColors(
+                    containerColor =
+                        if (overallStatus == "Normal") {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.secondaryContainer
+                        }
+                )
             ) {
 
                 Column(
-                    modifier =
-                        Modifier.padding(18.dp)
+                    modifier = Modifier.padding(18.dp)
                 ) {
 
                     Text(
-                        text =
-                            "Today's Report",
-
-                        fontSize =
-                            20.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
+                        text = "Today's Report",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(8.dp)
+                        modifier = Modifier.height(8.dp)
                     )
 
                     if (assessmentCompleted) {
@@ -491,23 +357,19 @@ fun DashboardScreen(
                         )
 
                         Spacer(
-                            modifier =
-                                Modifier.height(12.dp)
+                            modifier = Modifier.height(12.dp)
                         )
 
                         Text(
                             text =
                                 "Overall Status: $overallStatus",
-
-                            fontWeight =
-                                FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold
                         )
 
                         if (attentionCount > 0) {
 
                             Spacer(
-                                modifier =
-                                    Modifier.height(6.dp)
+                                modifier = Modifier.height(6.dp)
                             )
 
                             Text(
@@ -517,13 +379,11 @@ fun DashboardScreen(
                         }
 
                         Spacer(
-                            modifier =
-                                Modifier.height(6.dp)
+                            modifier = Modifier.height(6.dp)
                         )
 
                         Text(
-                            text =
-                                "Demo Mode"
+                            text = "Demo Mode"
                         )
 
                     } else {
@@ -534,8 +394,7 @@ fun DashboardScreen(
                         )
 
                         Spacer(
-                            modifier =
-                                Modifier.height(6.dp)
+                            modifier = Modifier.height(6.dp)
                         )
 
                         Text(
@@ -545,12 +404,10 @@ fun DashboardScreen(
                     }
 
                     Spacer(
-                        modifier =
-                            Modifier.height(12.dp)
+                        modifier = Modifier.height(12.dp)
                     )
 
                     OutlinedButton(
-
                         onClick = {
 
                             if (assessmentCompleted) {
@@ -567,9 +424,7 @@ fun DashboardScreen(
                             }
                         },
 
-                        modifier =
-                            Modifier.fillMaxWidth()
-
+                        modifier = Modifier.fillMaxWidth()
                     ) {
 
                         Text(
@@ -591,14 +446,9 @@ fun DashboardScreen(
         item {
 
             Text(
-                text =
-                    "Sensor Summary",
-
-                fontSize =
-                    20.sp,
-
-                fontWeight =
-                    FontWeight.Bold
+                text = "Sensor Summary",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
             )
         }
 
@@ -616,29 +466,21 @@ fun DashboardScreen(
         item {
 
             Card(
-                modifier =
-                    Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
 
                 Column(
-                    modifier =
-                        Modifier.padding(18.dp)
+                    modifier = Modifier.padding(18.dp)
                 ) {
 
                     Text(
-                        text =
-                            "Daily Visualization",
-
-                        fontSize =
-                            20.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
+                        text = "Daily Visualization",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(8.dp)
+                        modifier = Modifier.height(8.dp)
                     )
 
                     Text(
@@ -647,12 +489,10 @@ fun DashboardScreen(
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(12.dp)
+                        modifier = Modifier.height(12.dp)
                     )
 
                     OutlinedButton(
-
                         onClick = {
 
                             navController.navigate(
@@ -660,14 +500,63 @@ fun DashboardScreen(
                             )
                         },
 
-                        modifier =
-                            Modifier.fillMaxWidth()
-
+                        modifier = Modifier.fillMaxWidth()
                     ) {
 
                         Text(
-                            text =
-                                "View Sensor Graphs"
+                            text = "View Sensor Graphs"
+                        )
+                    }
+                }
+            }
+        }
+
+        // --------------------------------------------------
+        // ASSESSMENT HISTORY
+        // --------------------------------------------------
+
+        item {
+
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                Column(
+                    modifier = Modifier.padding(18.dp)
+                ) {
+
+                    Text(
+                        text = "Assessment History",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(8.dp)
+                    )
+
+                    Text(
+                        text =
+                            "View all your previous sensor assessment sessions, dates, times and usage duration."
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(12.dp)
+                    )
+
+                    OutlinedButton(
+                        onClick = {
+
+                            navController.navigate(
+                                "assessment_history"
+                            )
+                        },
+
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+
+                        Text(
+                            text = "View Assessment History"
                         )
                     }
                 }
@@ -681,29 +570,21 @@ fun DashboardScreen(
         item {
 
             Card(
-                modifier =
-                    Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
 
                 Column(
-                    modifier =
-                        Modifier.padding(18.dp)
+                    modifier = Modifier.padding(18.dp)
                 ) {
 
                     Text(
-                        text =
-                            "Previous Reports",
-
-                        fontSize =
-                            20.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
+                        text = "Previous Reports",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(8.dp)
+                        modifier = Modifier.height(8.dp)
                     )
 
                     Text(
@@ -712,12 +593,10 @@ fun DashboardScreen(
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(12.dp)
+                        modifier = Modifier.height(12.dp)
                     )
 
                     OutlinedButton(
-
                         onClick = {
 
                             navController.navigate(
@@ -725,14 +604,11 @@ fun DashboardScreen(
                             )
                         },
 
-                        modifier =
-                            Modifier.fillMaxWidth()
-
+                        modifier = Modifier.fillMaxWidth()
                     ) {
 
                         Text(
-                            text =
-                                "View Previous Reports"
+                            text = "View Previous Reports"
                         )
                     }
                 }
@@ -746,29 +622,21 @@ fun DashboardScreen(
         item {
 
             Card(
-                modifier =
-                    Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
 
                 Column(
-                    modifier =
-                        Modifier.padding(18.dp)
+                    modifier = Modifier.padding(18.dp)
                 ) {
 
                     Text(
-                        text =
-                            "AI Assistant",
-
-                        fontSize =
-                            20.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
+                        text = "AI Assistant",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(8.dp)
+                        modifier = Modifier.height(8.dp)
                     )
 
                     Text(
@@ -777,12 +645,10 @@ fun DashboardScreen(
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(12.dp)
+                        modifier = Modifier.height(12.dp)
                     )
 
                     OutlinedButton(
-
                         onClick = {
 
                             navController.navigate(
@@ -790,13 +656,11 @@ fun DashboardScreen(
                             )
                         },
 
-                        modifier =
-                            Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                     ) {
 
                         Text(
-                            text =
-                                "Open AI Assistant"
+                            text = "Open AI Assistant"
                         )
                     }
                 }
@@ -804,49 +668,39 @@ fun DashboardScreen(
         }
 
         // --------------------------------------------------
-        // DOCTOR CONSULTATION
+        // WELLNESS & PREVENTION
         // --------------------------------------------------
 
         item {
 
             Card(
-                modifier =
-                    Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
 
                 Column(
-                    modifier =
-                        Modifier.padding(18.dp)
+                    modifier = Modifier.padding(18.dp)
                 ) {
 
                     Text(
-                        text =
-                            "Doctor Consultation",
-
-                        fontSize =
-                            20.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
+                        text = "Wellness & Prevention",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(8.dp)
+                        modifier = Modifier.height(8.dp)
                     )
 
                     Text(
                         text =
-                            "Describe your health concerns through an anonymous consultation interface."
+                            "Get personalized exercise and wellness suggestions based on your latest assessment."
                     )
 
                     Spacer(
-                        modifier =
-                            Modifier.height(12.dp)
+                        modifier = Modifier.height(12.dp)
                     )
 
                     OutlinedButton(
-
                         onClick = {
 
                             navController.navigate(
@@ -854,13 +708,11 @@ fun DashboardScreen(
                             )
                         },
 
-                        modifier =
-                            Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth()
                     ) {
 
                         Text(
-                            text =
-                                "Consult Doctor"
+                            text = "View Recommendations"
                         )
                     }
                 }
@@ -874,7 +726,6 @@ fun DashboardScreen(
         item {
 
             Button(
-
                 onClick = {
 
                     navController.navigate(
@@ -882,19 +733,14 @@ fun DashboardScreen(
                     )
                 },
 
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(55.dp)
-
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(55.dp)
             ) {
 
                 Text(
-                    text =
-                        "Start New Assessment",
-
-                    fontSize =
-                        17.sp
+                    text = "Start New Assessment",
+                    fontSize = 17.sp
                 )
             }
         }
@@ -906,23 +752,18 @@ fun DashboardScreen(
         item {
 
             Spacer(
-                modifier =
-                    Modifier.height(10.dp)
+                modifier = Modifier.height(10.dp)
             )
 
             Text(
                 text =
                     "NeuroSense provides monitoring support and does not replace professional medical diagnosis.",
 
-                style =
-                    MaterialTheme
-                        .typography
-                        .bodySmall
+                style = MaterialTheme.typography.bodySmall
             )
 
             Spacer(
-                modifier =
-                    Modifier.height(20.dp)
+                modifier = Modifier.height(20.dp)
             )
         }
     }
@@ -938,60 +779,42 @@ private fun SensorSummaryCard(
 ) {
 
     Card(
-        modifier =
-            Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
     ) {
 
         Row(
-
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
 
             horizontalArrangement =
                 Arrangement.SpaceBetween
-
         ) {
 
             Column(
-                modifier =
-                    Modifier.weight(1f)
+                modifier = Modifier.weight(1f)
             ) {
 
                 Text(
-                    text =
-                        sensor.name,
-
-                    fontSize =
-                        17.sp,
-
-                    fontWeight =
-                        FontWeight.SemiBold
+                    text = sensor.name,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Spacer(
-                    modifier =
-                        Modifier.height(4.dp)
+                    modifier = Modifier.height(4.dp)
                 )
 
                 Text(
-                    text =
-                        sensor.status
+                    text = sensor.status
                 )
             }
 
             Text(
-                text =
-                    sensor.value,
-
-                fontSize =
-                    16.sp,
-
-                fontWeight =
-                    FontWeight.Bold
+                text = sensor.value,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }
 }
-

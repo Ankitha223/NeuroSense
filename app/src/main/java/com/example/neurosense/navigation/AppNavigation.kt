@@ -1,3 +1,4 @@
+
 package com.example.neurosense.navigation
 
 import androidx.compose.runtime.Composable
@@ -5,6 +6,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+
 import com.example.neurosense.screens.SensorAssessmentScreen
 import com.example.neurosense.screens.CameraCaptureScreen
 import com.example.neurosense.screens.ExistingUserScreen
@@ -21,6 +23,9 @@ import com.example.neurosense.screens.SensorGraphsScreen
 import com.example.neurosense.screens.PreviousReportsScreen
 import com.example.neurosense.screens.DoctorConsultationScreen
 import com.example.neurosense.screens.ChatbotScreen
+import com.example.neurosense.screens.AssessmentHistoryScreen
+import com.example.neurosense.screens.SensorApiTestScreen
+
 @Composable
 fun AppNavigation() {
 
@@ -34,17 +39,14 @@ fun AppNavigation() {
     ) {
 
         composable("splash") {
-
             SplashScreen(navController)
         }
 
         composable("login_choice") {
-
             LoginChoiceScreen(navController)
         }
 
         composable("face_registration") {
-
             FaceRegistrationScreen(
                 navController = navController,
                 viewModel = registrationViewModel
@@ -52,7 +54,6 @@ fun AppNavigation() {
         }
 
         composable("camera_capture") {
-
             CameraCaptureScreen(
                 navController = navController,
                 viewModel = registrationViewModel
@@ -60,7 +61,6 @@ fun AppNavigation() {
         }
 
         composable("existing_user") {
-
             ExistingUserScreen(
                 navController = navController
             )
@@ -77,43 +77,55 @@ fun AppNavigation() {
         composable("questionnaire_step3") {
             QuestionnaireStep3Screen(navController)
         }
-        composable("dashboard") {
 
+        composable("dashboard") {
             DashboardScreen(navController)
         }
-        composable("doctor_consultation") {
 
+        composable("doctor_consultation") {
             DoctorConsultationScreen(
                 navController = navController
             )
         }
-        composable("chatbot") {
 
+        composable("chatbot") {
             ChatbotScreen(
                 navController = navController
             )
         }
-        composable("sensor_assessment") {
 
+        composable("sensor_assessment") {
             SensorAssessmentScreen(
                 navController = navController
             )
         }
+
         composable("sensor_graphs") {
             SensorGraphsScreen(navController)
         }
-        composable("daily_report") {
 
+        composable("daily_report") {
             DailyReportScreen(
                 navController = navController
             )
         }
-        composable("previous_reports") {
 
+        composable("previous_reports") {
             PreviousReportsScreen(
                 navController = navController
             )
         }
 
+        composable("assessment_history") {
+            AssessmentHistoryScreen(
+                navController = navController
+            )
+        }
+
+        // Temporary test screen for MySQL/PHP connection
+        composable("sensor_api_test") {
+            SensorApiTestScreen()
+        }
     }
 }
+

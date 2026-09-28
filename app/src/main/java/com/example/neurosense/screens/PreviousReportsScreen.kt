@@ -1,129 +1,159 @@
+
 package com.example.neurosense.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.neurosense.components.BackButton
-import com.example.neurosense.data.UserStorage
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
+import com.example.neurosense.data.AssessmentData
+
+data class PreviousSensorReport(
+    val name: String,
+    val reading: String,
+    val status: String
+)
 
 @Composable
 fun PreviousReportsScreen(
     navController: NavController
 ) {
 
-    val context = LocalContext.current
+    // --------------------------------------------------
+    // GET LATEST LOCAL ASSESSMENT
+    // --------------------------------------------------
 
-    var isLoading by remember {
-        mutableStateOf(true)
-    }
+    val tremorValue =
+        AssessmentData.tremorValue
 
-    var errorMessage by remember {
-        mutableStateOf("")
-    }
+    val movementValue =
+        AssessmentData.movementValue
 
-    var score by remember {
-        mutableStateOf(0)
-    }
+    val stabilityValue =
+        AssessmentData.stabilityValue
 
-    var totalQuestions by remember {
-        mutableStateOf(0)
-    }
+    val forceValue =
+        AssessmentData.forceValue
 
-    var percentage by remember {
-        mutableStateOf(0)
-    }
+    val pressureValue =
+        AssessmentData.pressureValue
 
-    var result by remember {
-        mutableStateOf("")
-    }
+    // --------------------------------------------------
+    // CHECK WHETHER ASSESSMENT EXISTS
+    // --------------------------------------------------
 
-    LaunchedEffect(Unit) {
+    val assessmentAvailable =
+        tremorValue != 0.0 ||
+                movementValue != 0.0 ||
+                stabilityValue != 0.0 ||
+                forceValue != 0.0 ||
+                pressureValue != 0.0
 
-        try {
+    // --------------------------------------------------
+    // STATUS
+    // --------------------------------------------------
 
-            val userStorage =
-                UserStorage(context)
+    val tremorStatus =
+        if (tremorValue > 3.0)
+            "Needs Attention"
+        else
+            "Normal"
 
-            val userId =
-                userStorage.getUserId()
+    val movementStatus =
+        if (movementValue < 6.0)
+            "Needs Attention"
+        else
+            "Normal"
 
-            if (userId.isBlank()) {
+    val stabilityStatus =
+        if (stabilityValue > 3.5)
+            "Needs Attention"
+        else
+            "Normal"
 
-                errorMessage =
-                    "User ID not found."
+    val forceStatus =
+        if (forceValue < 3.0)
+            "Needs Attention"
+        else
+            "Normal"
 
-                isLoading = false
+    val pressureStatus =
+        if (
+            pressureValue < 25.0 ||
+            pressureValue > 45.0
+        )
+            "Needs Attention"
+        else
+            "Normal"
 
-                return@LaunchedEffect
-            }
+    val reports = listOf(
 
-            val document =
-                FirebaseFirestore
-                    .getInstance()
-                    .collection("users")
-                    .document(userId)
-                    .collection("assessments")
-                    .document("latest")
-                    .get()
-                    .await()
+        PreviousSensorReport(
+            name = "Tremor",
+            reading = String.format("%.2f", tremorValue),
+            status = tremorStatus
+        ),
 
-            if (document.exists()) {
+        PreviousSensorReport(
+            name = "Movement",
+            reading = String.format("%.2f m/s²", movementValue),
+            status = movementStatus
+        ),
 
-                score =
-                    document
-                        .getLong("score")
-                        ?.toInt()
-                        ?: 0
+        PreviousSensorReport(
+            name = "Stability",
+            reading = String.format("%.2f", stabilityValue),
+            status = stabilityStatus
+        ),
 
-                totalQuestions =
-                    document
-                        .getLong("totalQuestions")
-                        ?.toInt()
-                        ?: 0
+        PreviousSensorReport(
+            name = "Force",
+            reading = String.format("%.2f N", forceValue),
+            status = forceStatus
+        ),
 
-                percentage =
-                    document
-                        .getLong("percentage")
-                        ?.toInt()
-                        ?: 0
+        PreviousSensorReport(
+            name = "Pressure",
+            reading = String.format("%.2f kPa", pressureValue),
+            status = pressureStatus
+        )
+    )
 
-                result =
-                    document
-                        .getString("result")
-                        ?: "Unknown"
-
-            } else {
-
-                errorMessage =
-                    "No previous assessment found."
-            }
-
-        } catch (e: Exception) {
-
-            errorMessage =
-                "Unable to load previous report."
+    val attentionCount =
+        reports.count {
+            it.status == "Needs Attention"
         }
 
-        isLoading = false
-    }
+    val overallStatus =
+        if (attentionCount > 0)
+            "Needs Attention"
+        else
+            "Normal"
+
+    // --------------------------------------------------
+    // SCREEN
+    // --------------------------------------------------
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
+
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(20.dp),
 
         verticalArrangement =
             Arrangement.spacedBy(16.dp)
+
     ) {
+
+        // --------------------------------------------------
+        // BACK
+        // --------------------------------------------------
 
         item {
 
@@ -138,14 +168,16 @@ fun PreviousReportsScreen(
             )
         }
 
+        // --------------------------------------------------
+        // HEADER
+        // --------------------------------------------------
+
         item {
 
             Text(
-                text =
-                    "Previous Reports",
+                text = "Previous Reports",
 
-                fontSize =
-                    28.sp,
+                fontSize = 28.sp,
 
                 fontWeight =
                     FontWeight.Bold
@@ -158,44 +190,15 @@ fun PreviousReportsScreen(
 
             Text(
                 text =
-                    "Previous NeuroSense Assessment"
+                    "Your latest NeuroSense assessment summary."
             )
         }
 
-        if (isLoading) {
+        // --------------------------------------------------
+        // NO REPORT
+        // --------------------------------------------------
 
-            item {
-
-                Card(
-                    modifier =
-                        Modifier.fillMaxWidth()
-                ) {
-
-                    Column(
-                        modifier =
-                            Modifier.padding(20.dp)
-                    ) {
-
-                        CircularProgressIndicator()
-
-                        Spacer(
-                            modifier =
-                                Modifier.height(12.dp)
-                        )
-
-                        Text(
-                            text =
-                                "Loading previous report..."
-                        )
-                    }
-                }
-            }
-        }
-
-        if (
-            !isLoading &&
-            errorMessage.isNotEmpty()
-        ) {
+        if (!assessmentAvailable) {
 
             item {
 
@@ -208,44 +211,84 @@ fun PreviousReportsScreen(
                             containerColor =
                                 MaterialTheme
                                     .colorScheme
-                                    .errorContainer
+                                    .primaryContainer
                         )
+                ) {
+
+                    Column(
+                        modifier =
+                            Modifier.padding(18.dp)
+                    ) {
+
+                        Text(
+                            text =
+                                "No Assessment Available",
+
+                            fontSize =
+                                20.sp,
+
+                            fontWeight =
+                                FontWeight.Bold
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Complete a sensor assessment to generate your first report."
+                        )
+                    }
+                }
+            }
+
+            item {
+
+                Button(
+
+                    onClick = {
+
+                        navController.navigate(
+                            "sensor_assessment"
+                        )
+                    },
+
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(55.dp)
+
                 ) {
 
                     Text(
                         text =
-                            errorMessage,
-
-                        modifier =
-                            Modifier.padding(18.dp),
-
-                        fontSize =
-                            18.sp,
-
-                        fontWeight =
-                            FontWeight.Bold
+                            "Start Sensor Assessment"
                     )
                 }
             }
-        }
 
-        if (
-            !isLoading &&
-            errorMessage.isEmpty()
-        ) {
+        } else {
+
+            // --------------------------------------------------
+            // OVERALL STATUS
+            // --------------------------------------------------
 
             item {
 
                 Card(
+
                     modifier =
                         Modifier.fillMaxWidth(),
 
                     colors =
                         CardDefaults.cardColors(
+
                             containerColor =
                                 if (
-                                    result ==
-                                    "Low indication"
+                                    overallStatus ==
+                                    "Normal"
                                 ) {
 
                                     MaterialTheme
@@ -268,7 +311,7 @@ fun PreviousReportsScreen(
 
                         Text(
                             text =
-                                "Assessment Result",
+                                "Latest Assessment",
 
                             fontSize =
                                 20.sp,
@@ -279,12 +322,12 @@ fun PreviousReportsScreen(
 
                         Spacer(
                             modifier =
-                                Modifier.height(10.dp)
+                                Modifier.height(8.dp)
                         )
 
                         Text(
                             text =
-                                result,
+                                overallStatus,
 
                             fontSize =
                                 24.sp,
@@ -292,31 +335,107 @@ fun PreviousReportsScreen(
                             fontWeight =
                                 FontWeight.Bold
                         )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "$attentionCount of ${reports.size} areas require attention based on the current demo readings."
+                        )
                     }
                 }
             }
 
-            item {
-
-                ReportValueCard(
-                    title =
-                        "Score",
-
-                    value =
-                        "$score / $totalQuestions"
-                )
-            }
+            // --------------------------------------------------
+            // SENSOR RESULTS
+            // --------------------------------------------------
 
             item {
 
-                ReportValueCard(
-                    title =
-                        "Percentage",
+                Text(
+                    text =
+                        "Sensor Summary",
 
-                    value =
-                        "$percentage%"
+                    fontSize =
+                        22.sp,
+
+                    fontWeight =
+                        FontWeight.Bold
                 )
             }
+
+            items(reports.size) { index ->
+
+                PreviousReportCard(
+                    report =
+                        reports[index]
+                )
+            }
+
+            // --------------------------------------------------
+            // VIEW GRAPHS
+            // --------------------------------------------------
+
+            item {
+
+                Button(
+
+                    onClick = {
+
+                        navController.navigate(
+                            "sensor_graphs"
+                        )
+                    },
+
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(55.dp)
+
+                ) {
+
+                    Text(
+                        text =
+                            "View Sensor Graphs"
+                    )
+                }
+            }
+
+            // --------------------------------------------------
+            // NEW ASSESSMENT
+            // --------------------------------------------------
+
+            item {
+
+                OutlinedButton(
+
+                    onClick = {
+
+                        navController.navigate(
+                            "sensor_assessment"
+                        )
+                    },
+
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(55.dp)
+
+                ) {
+
+                    Text(
+                        text =
+                            "Take New Assessment"
+                    )
+                }
+            }
+
+            // --------------------------------------------------
+            // INFORMATION
+            // --------------------------------------------------
 
             item {
 
@@ -348,34 +467,19 @@ fun PreviousReportsScreen(
 
                         Text(
                             text =
-                                "This assessment is intended for monitoring support only and does not provide a medical diagnosis."
+                                "This report is based on the latest local demo sensor assessment. Backend and permanent report storage will be connected later."
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "NeuroSense provides monitoring support and does not replace professional medical diagnosis."
                         )
                     }
-                }
-            }
-
-            item {
-
-                Button(
-
-                    onClick = {
-
-                        navController.navigate(
-                            "sensor_graphs"
-                        )
-                    },
-
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(55.dp)
-
-                ) {
-
-                    Text(
-                        text =
-                            "View Sensor Graphs"
-                    )
                 }
             }
         }
@@ -390,48 +494,81 @@ fun PreviousReportsScreen(
     }
 }
 
+// --------------------------------------------------
+// REPORT CARD
+// --------------------------------------------------
+
 @Composable
-private fun ReportValueCard(
-    title: String,
-    value: String
+private fun PreviousReportCard(
+    report: PreviousSensorReport
 ) {
 
+    val needsAttention =
+        report.status == "Needs Attention"
+
     Card(
+
         modifier =
-            Modifier.fillMaxWidth()
+            Modifier.fillMaxWidth(),
+
+        colors =
+            CardDefaults.cardColors(
+
+                containerColor =
+                    if (needsAttention) {
+
+                        MaterialTheme
+                            .colorScheme
+                            .errorContainer
+
+                    } else {
+
+                        MaterialTheme
+                            .colorScheme
+                            .surface
+                    }
+            )
     ) {
 
-        Row(
+        Column(
             modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(18.dp),
-
-            horizontalArrangement =
-                Arrangement.SpaceBetween
+                Modifier.padding(16.dp)
         ) {
 
             Text(
                 text =
-                    title,
+                    report.name,
 
                 fontSize =
-                    17.sp,
-
-                fontWeight =
-                    FontWeight.SemiBold
-            )
-
-            Text(
-                text =
-                    value,
-
-                fontSize =
-                    17.sp,
+                    18.sp,
 
                 fontWeight =
                     FontWeight.Bold
             )
+
+            Spacer(
+                modifier =
+                    Modifier.height(6.dp)
+            )
+
+            Text(
+                text =
+                    "Reading: ${report.reading}"
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(6.dp)
+            )
+
+            Text(
+                text =
+                    "Status: ${report.status}",
+
+                fontWeight =
+                    FontWeight.SemiBold
+            )
         }
     }
 }
+

@@ -1,20 +1,25 @@
+
 package com.example.neurosense.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.neurosense.components.BackButton
+import com.example.neurosense.data.AssessmentData
 
-data class ChatMessage(
-    val text: String,
-    val isUser: Boolean
+data class ExerciseRecommendation(
+    val area: String,
+    val title: String,
+    val description: String,
+    val steps: String
 )
 
 @Composable
@@ -23,136 +28,231 @@ fun DoctorConsultationScreen(
 ) {
 
     // --------------------------------------------------
-    // CHAT MESSAGES
+    // GET LATEST ASSESSMENT VALUES
     // --------------------------------------------------
 
-    val messages = remember {
+    val tremorValue =
+        AssessmentData.tremorValue
 
-        mutableStateListOf(
+    val movementValue =
+        AssessmentData.movementValue
 
-            ChatMessage(
-                text =
-                    "Hello! I am the NeuroSense AI Assistant. " +
-                            "I can explain your assessment, sensor readings, " +
-                            "and general health-monitoring information.",
-                isUser = false
-            )
-        )
-    }
+    val stabilityValue =
+        AssessmentData.stabilityValue
 
-    // --------------------------------------------------
-    // OTHER QUESTION
-    // --------------------------------------------------
+    val forceValue =
+        AssessmentData.forceValue
 
-    var showOtherInput by remember {
-        mutableStateOf(false)
-    }
-
-    var typedQuestion by remember {
-        mutableStateOf("")
-    }
+    val pressureValue =
+        AssessmentData.pressureValue
 
     // --------------------------------------------------
-    // PREDEFINED QUESTIONS
+    // CHECK ASSESSMENT
     // --------------------------------------------------
 
-    val predefinedQuestions = listOf(
-
-        "What does my assessment result mean?",
-
-        "What does my tremor reading mean?",
-
-        "What does my stability reading mean?",
-
-        "What does my movement reading mean?",
-
-        "Why are sensor readings monitored?",
-
-        "How can I monitor changes over time?",
-
-        "What should I do if my readings change?",
-
-        "Other"
-    )
+    val assessmentCompleted =
+        tremorValue != 0.0 ||
+                movementValue != 0.0 ||
+                stabilityValue != 0.0 ||
+                forceValue != 0.0 ||
+                pressureValue != 0.0
 
     // --------------------------------------------------
-    // AI RESPONSE
+    // GENERATE WELLNESS RECOMMENDATIONS
     // --------------------------------------------------
 
-    fun getAIResponse(question: String): String {
+    val recommendations =
+        remember(
+            tremorValue,
+            movementValue,
+            stabilityValue,
+            forceValue,
+            pressureValue
+        ) {
 
-        return when {
+            val list =
+                mutableListOf<ExerciseRecommendation>()
 
-            question ==
-                    "What does my assessment result mean?" ->
+            if (!assessmentCompleted) {
 
-                "Your assessment result summarizes the responses " +
-                        "and measurements collected during your assessment. " +
-                        "It is intended for monitoring changes over time " +
-                        "and does not provide a medical diagnosis."
+                list.add(
+                    ExerciseRecommendation(
+                        area = "General Wellness",
+                        title = "Gentle Daily Movement",
+                        description =
+                            "Regular gentle movement can support mobility, flexibility and healthy daily activity.",
+                        steps =
+                            "1. Walk slowly for 5–10 minutes.\n" +
+                                    "2. Move your arms gently.\n" +
+                                    "3. Take short breaks when needed.\n" +
+                                    "4. Stop if you feel pain, dizziness or unusual discomfort."
+                    )
+                )
 
-            question ==
-                    "What does my tremor reading mean?" ->
+                list.add(
+                    ExerciseRecommendation(
+                        area = "Flexibility",
+                        title = "Gentle Stretching",
+                        description =
+                            "Simple stretching can help maintain comfortable movement and flexibility.",
+                        steps =
+                            "1. Sit or stand comfortably.\n" +
+                                    "2. Slowly stretch your arms and shoulders.\n" +
+                                    "3. Hold each comfortable stretch for 10–15 seconds.\n" +
+                                    "4. Relax and repeat gently."
+                    )
+                )
 
-                "The tremor reading represents the amount of " +
-                        "shaking or movement variation detected during " +
-                        "the assessment. Changes in this value can be " +
-                        "monitored over time."
+            } else {
 
-            question ==
-                    "What does my stability reading mean?" ->
+                // --------------------------------------------------
+                // TREMOR / HAND CONTROL
+                // --------------------------------------------------
 
-                "The stability reading represents how consistent " +
-                        "your movement and balance were during the " +
-                        "measurement. Lower stability can indicate " +
-                        "greater movement variation."
+                if (tremorValue > 3.0) {
 
-            question ==
-                    "What does my movement reading mean?" ->
+                    list.add(
+                        ExerciseRecommendation(
+                            area = "Movement Control",
+                            title = "Slow Hand & Wrist Movement",
+                            description =
+                                "Controlled hand and wrist movements can help maintain comfortable hand mobility.",
+                            steps =
+                                "1. Rest your forearm comfortably on a table.\n" +
+                                        "2. Slowly open and close your hand.\n" +
+                                        "3. Rotate your wrist gently in both directions.\n" +
+                                        "4. Repeat 5–10 times.\n" +
+                                        "5. Keep movements slow and comfortable."
+                        )
+                    )
+                }
 
-                "The movement reading represents motion detected " +
-                        "by the sensor during the assessment. Comparing " +
-                        "readings over multiple assessments can help " +
-                        "identify changes in movement patterns."
+                // --------------------------------------------------
+                // MOVEMENT
+                // --------------------------------------------------
 
-            question ==
-                    "Why are sensor readings monitored?" ->
+                if (movementValue < 6.0) {
 
-                "Sensor readings allow NeuroSense to observe movement " +
-                        "patterns and changes over time. This information " +
-                        "can support personal monitoring and reporting."
+                    list.add(
+                        ExerciseRecommendation(
+                            area = "Mobility",
+                            title = "Gentle Walking",
+                            description =
+                                "Light walking supports regular movement and everyday mobility.",
+                            steps =
+                                "1. Walk on a safe and level surface.\n" +
+                                        "2. Start slowly for about 5 minutes.\n" +
+                                        "3. Maintain a comfortable pace.\n" +
+                                        "4. Increase duration gradually when comfortable.\n" +
+                                        "5. Use appropriate support if required."
+                        )
+                    )
+                }
 
-            question ==
-                    "How can I monitor changes over time?" ->
+                // --------------------------------------------------
+                // STABILITY
+                // --------------------------------------------------
 
-                "Regular assessments can help you compare your readings " +
-                        "over time. Looking at trends rather than a single " +
-                        "reading provides more useful monitoring information."
+                if (stabilityValue > 3.5) {
 
-            question ==
-                    "What should I do if my readings change?" ->
+                    list.add(
+                        ExerciseRecommendation(
+                            area = "Balance & Stability",
+                            title = "Supported Standing",
+                            description =
+                                "Simple supported standing practice can help maintain body control during everyday activities.",
+                            steps =
+                                "1. Stand near a wall or sturdy chair.\n" +
+                                        "2. Keep one hand lightly on the support.\n" +
+                                        "3. Keep your feet comfortably apart.\n" +
+                                        "4. Hold the position for 10–20 seconds.\n" +
+                                        "5. Repeat 2–3 times.\n" +
+                                        "6. Do not perform this exercise without support if you feel unsteady."
+                        )
+                    )
+                }
 
-                "A change in a reading does not automatically indicate " +
-                        "a medical problem. Continue monitoring your results " +
-                        "and consider discussing persistent or concerning " +
-                        "changes with a qualified healthcare professional."
+                // --------------------------------------------------
+                // FORCE
+                // --------------------------------------------------
 
-            else ->
+                if (forceValue < 3.0) {
 
-                "I can provide general information about your symptoms, " +
-                        "assessment results, sensor readings, and health " +
-                        "monitoring. I cannot provide a medical diagnosis. " +
-                        "For a specific medical concern, please consult " +
-                        "a qualified healthcare professional."
+                    list.add(
+                        ExerciseRecommendation(
+                            area = "Hand Strength",
+                            title = "Gentle Grip Exercise",
+                            description =
+                                "Light grip activity can help maintain hand strength during everyday tasks.",
+                            steps =
+                                "1. Use a soft stress ball or folded soft towel.\n" +
+                                        "2. Gently squeeze it.\n" +
+                                        "3. Hold for 3–5 seconds.\n" +
+                                        "4. Slowly release.\n" +
+                                        "5. Repeat 5–10 times.\n" +
+                                        "6. Avoid excessive force."
+                        )
+                    )
+                }
+
+                // --------------------------------------------------
+                // PRESSURE
+                // --------------------------------------------------
+
+                if (
+                    pressureValue < 25.0 ||
+                    pressureValue > 45.0
+                ) {
+
+                    list.add(
+                        ExerciseRecommendation(
+                            area = "Hand Comfort",
+                            title = "Hand Relaxation",
+                            description =
+                                "Relaxation movements can reduce unnecessary tension during hand activities.",
+                            steps =
+                                "1. Place your hand comfortably on a flat surface.\n" +
+                                        "2. Relax your fingers.\n" +
+                                        "3. Slowly spread your fingers apart.\n" +
+                                        "4. Hold for a few seconds.\n" +
+                                        "5. Relax the hand completely.\n" +
+                                        "6. Repeat 5 times."
+                        )
+                    )
+                }
+
+                // --------------------------------------------------
+                // GENERAL WELLNESS
+                // --------------------------------------------------
+
+                if (list.isEmpty()) {
+
+                    list.add(
+                        ExerciseRecommendation(
+                            area = "General Wellness",
+                            title = "Maintain Regular Activity",
+                            description =
+                                "Your current demo assessment does not indicate an area requiring additional wellness activities.",
+                            steps =
+                                "1. Continue regular light physical activity.\n" +
+                                        "2. Take short movement breaks during long periods of sitting.\n" +
+                                        "3. Continue comfortable stretching and mobility exercises.\n" +
+                                        "4. Repeat NeuroSense assessments regularly."
+                        )
+                    )
+                }
+            }
+
+            list
         }
-    }
 
     // --------------------------------------------------
     // SCREEN
     // --------------------------------------------------
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier =
+            Modifier.fillMaxSize()
     ) {
 
         // --------------------------------------------------
@@ -160,243 +260,306 @@ fun DoctorConsultationScreen(
         // --------------------------------------------------
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
         ) {
 
             BackButton(
-                navController = navController
+                navController =
+                    navController
             )
 
             Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-            Text(
-                text = "AI Health Assistant",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(
-                modifier = Modifier.height(6.dp)
+                modifier =
+                    Modifier.height(8.dp)
             )
 
             Text(
                 text =
-                    "NeuroSense AI-powered health monitoring assistant"
+                    "Wellness & Prevention",
+
+                fontSize =
+                    28.sp,
+
+                fontWeight =
+                    FontWeight.Bold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(6.dp)
+            )
+
+            Text(
+                text =
+                    "Personalized wellness activities based on your latest NeuroSense assessment."
             )
         }
 
         // --------------------------------------------------
-        // CHAT AREA
+        // CONTENT
         // --------------------------------------------------
 
         LazyColumn(
 
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
 
             verticalArrangement =
-                Arrangement.spacedBy(10.dp)
+                Arrangement.spacedBy(14.dp)
 
         ) {
 
-            items(messages) { message ->
-
-                ChatMessageCard(
-                    message = message
-                )
-            }
+            // --------------------------------------------------
+            // INTRODUCTION
+            // --------------------------------------------------
 
             item {
 
-                Spacer(
-                    modifier = Modifier.height(8.dp)
-                )
-
-                Text(
-                    text =
-                        "What would you like to know?",
-
-                    fontSize = 18.sp,
-
-                    fontWeight =
-                        FontWeight.SemiBold
-                )
-
-                Spacer(
+                Card(
                     modifier =
-                        Modifier.height(8.dp)
-                )
-            }
+                        Modifier.fillMaxWidth(),
 
-            // --------------------------------------------------
-            // PREDEFINED QUESTIONS
-            // --------------------------------------------------
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme
+                                    .colorScheme
+                                    .primaryContainer
+                        )
+                ) {
 
-            if (!showOtherInput) {
-
-                items(predefinedQuestions) { question ->
-
-                    OutlinedButton(
-
-                        onClick = {
-
-                            if (question == "Other") {
-
-                                showOtherInput = true
-
-                            } else {
-
-                                messages.add(
-                                    ChatMessage(
-                                        text = question,
-                                        isUser = true
-                                    )
-                                )
-
-                                messages.add(
-                                    ChatMessage(
-                                        text =
-                                            getAIResponse(
-                                                question
-                                            ),
-                                        isUser = false
-                                    )
-                                )
-                            }
-                        },
-
+                    Column(
                         modifier =
-                            Modifier.fillMaxWidth()
-
+                            Modifier.padding(18.dp)
                     ) {
 
                         Text(
-                            text = question
+                            text =
+                                "Your Personalized Wellness Plan",
+
+                            fontSize =
+                                20.sp,
+
+                            fontWeight =
+                                FontWeight.Bold
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                if (assessmentCompleted) {
+
+                                    "NeuroSense reviewed your latest assessment and selected general wellness activities for areas that may benefit from additional attention."
+
+                                } else {
+
+                                    "Complete a sensor assessment to receive personalized wellness suggestions."
+                                }
                         )
                     }
                 }
             }
 
             // --------------------------------------------------
-            // OTHER INPUT
+            // RECOMMENDATION TITLE
             // --------------------------------------------------
 
-            if (showOtherInput) {
+            if (assessmentCompleted) {
 
                 item {
 
-                    OutlinedTextField(
+                    Text(
+                        text =
+                            "Recommended Activities",
 
-                        value =
-                            typedQuestion,
+                        fontSize =
+                            22.sp,
 
-                        onValueChange = {
-                            typedQuestion = it
-                        },
-
-                        modifier =
-                            Modifier.fillMaxWidth(),
-
-                        label = {
-                            Text(
-                                "Type your question"
-                            )
-                        },
-
-                        placeholder = {
-                            Text(
-                                "Ask the AI Assistant..."
-                            )
-                        },
-
-                        minLines = 3
+                        fontWeight =
+                            FontWeight.Bold
                     )
+                }
+            }
 
-                    Spacer(
+            // --------------------------------------------------
+            // RECOMMENDATIONS
+            // --------------------------------------------------
+
+            items(recommendations) { recommendation ->
+
+                ExerciseRecommendationCard(
+                    recommendation =
+                        recommendation
+                )
+            }
+
+            // --------------------------------------------------
+            // HEALTH AI ASSISTANT
+            // --------------------------------------------------
+
+            item {
+
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth(),
+
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                MaterialTheme
+                                    .colorScheme
+                                    .secondaryContainer
+                        )
+                ) {
+
+                    Column(
                         modifier =
-                            Modifier.height(10.dp)
-                    )
-
-                    Button(
-
-                        onClick = {
-
-                            if (
-                                typedQuestion
-                                    .isNotBlank()
-                            ) {
-
-                                messages.add(
-                                    ChatMessage(
-                                        text =
-                                            typedQuestion
-                                                .trim(),
-                                        isUser = true
-                                    )
-                                )
-
-                                messages.add(
-                                    ChatMessage(
-                                        text =
-                                            getAIResponse(
-                                                typedQuestion
-                                            ),
-                                        isUser = false
-                                    )
-                                )
-
-                                typedQuestion = ""
-
-                                showOtherInput = false
-                            }
-                        },
-
-                        enabled =
-                            typedQuestion
-                                .isNotBlank(),
-
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(55.dp)
-
+                            Modifier.padding(18.dp)
                     ) {
 
                         Text(
-                            text = "Ask AI",
-                            fontSize = 17.sp
+                            text =
+                                "Need More Guidance?",
+
+                            fontSize =
+                                20.sp,
+
+                            fontWeight =
+                                FontWeight.Bold
                         )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Ask the NeuroSense Health AI Assistant for simple health and wellness information."
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(12.dp)
+                        )
+
+                        Button(
+
+                            onClick = {
+
+                                navController.navigate(
+                                    "chatbot"
+                                )
+                            },
+
+                            modifier =
+                                Modifier.fillMaxWidth()
+
+                        ) {
+
+                            Text(
+                                text =
+                                    "Open Health AI Assistant"
+                            )
+                        }
                     }
+                }
+            }
 
-                    Spacer(
+            // --------------------------------------------------
+            // SAFETY
+            // --------------------------------------------------
+
+            item {
+
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                ) {
+
+                    Column(
                         modifier =
-                            Modifier.height(6.dp)
-                    )
-
-                    OutlinedButton(
-
-                        onClick = {
-
-                            typedQuestion = ""
-
-                            showOtherInput = false
-                        },
-
-                        modifier =
-                            Modifier.fillMaxWidth()
-
+                            Modifier.padding(18.dp)
                     ) {
 
                         Text(
-                            text = "Back to Questions"
+                            text =
+                                "Safety First",
+
+                            fontSize =
+                                20.sp,
+
+                            fontWeight =
+                                FontWeight.Bold
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "These are general wellness suggestions and are not a treatment for a specific medical condition."
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "Perform activities gently and stop if you experience pain, dizziness, weakness or unusual discomfort."
+                        )
+
+                        Spacer(
+                            modifier =
+                                Modifier.height(8.dp)
+                        )
+
+                        Text(
+                            text =
+                                "For persistent or serious changes, seek advice from a qualified healthcare professional."
                         )
                     }
+                }
+            }
+
+            // --------------------------------------------------
+            // NEW ASSESSMENT
+            // --------------------------------------------------
+
+            item {
+
+                OutlinedButton(
+
+                    onClick = {
+
+                        navController.navigate(
+                            "sensor_assessment"
+                        )
+                    },
+
+                    modifier =
+                        Modifier.fillMaxWidth()
+
+                ) {
+
+                    Text(
+                        text =
+                            "Take New Assessment"
+                    )
                 }
             }
 
@@ -408,16 +571,17 @@ fun DoctorConsultationScreen(
 
                 Spacer(
                     modifier =
-                        Modifier.height(8.dp)
+                        Modifier.height(6.dp)
                 )
 
                 Text(
                     text =
-                        "NeuroSense AI provides general health-monitoring " +
-                                "information and does not provide medical diagnosis.",
+                        "NeuroSense provides monitoring and general wellness support. It does not provide medical diagnosis or replace professional medical advice.",
 
                     style =
-                        MaterialTheme.typography.bodySmall
+                        MaterialTheme
+                            .typography
+                            .bodySmall
                 )
 
                 Spacer(
@@ -430,52 +594,33 @@ fun DoctorConsultationScreen(
 }
 
 // --------------------------------------------------
-// CHAT MESSAGE CARD
+// EXERCISE RECOMMENDATION CARD
 // --------------------------------------------------
 
 @Composable
-private fun ChatMessageCard(
-    message: ChatMessage
+private fun ExerciseRecommendationCard(
+    recommendation: ExerciseRecommendation
 ) {
 
     Card(
-
         modifier =
-            Modifier.fillMaxWidth(),
-
-        colors =
-            CardDefaults.cardColors(
-
-                containerColor =
-                    if (message.isUser) {
-
-                        MaterialTheme
-                            .colorScheme
-                            .secondaryContainer
-
-                    } else {
-
-                        MaterialTheme
-                            .colorScheme
-                            .surfaceVariant
-                    }
-            )
+            Modifier.fillMaxWidth()
     ) {
 
         Column(
             modifier =
-                Modifier.padding(14.dp)
+                Modifier.padding(18.dp)
         ) {
 
             Text(
                 text =
-                    if (message.isUser)
-                        "You"
-                    else
-                        "NeuroSense AI",
+                    recommendation.area,
+
+                fontSize =
+                    14.sp,
 
                 fontWeight =
-                    FontWeight.Bold
+                    FontWeight.SemiBold
             )
 
             Spacer(
@@ -485,7 +630,49 @@ private fun ChatMessageCard(
 
             Text(
                 text =
-                    message.text,
+                    recommendation.title,
+
+                fontSize =
+                    20.sp,
+
+                fontWeight =
+                    FontWeight.Bold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(8.dp)
+            )
+
+            Text(
+                text =
+                    recommendation.description,
+
+                fontSize =
+                    15.sp
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(12.dp)
+            )
+
+            Text(
+                text =
+                    "How to do it",
+
+                fontWeight =
+                    FontWeight.Bold
+            )
+
+            Spacer(
+                modifier =
+                    Modifier.height(6.dp)
+            )
+
+            Text(
+                text =
+                    recommendation.steps,
 
                 fontSize =
                     15.sp
@@ -493,3 +680,4 @@ private fun ChatMessageCard(
         }
     }
 }
+

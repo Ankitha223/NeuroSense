@@ -48,7 +48,8 @@ dependencies {
     // --------------------------------------------------
     // ANDROID / COMPOSE
     // --------------------------------------------------
-
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("io.coil-kt.coil3:coil-gif:3.3.0")
     implementation(platform(libs.androidx.compose.bom))
 
     implementation(libs.androidx.activity.compose)
@@ -130,7 +131,10 @@ dependencies {
     // --------------------------------------------------
 
     implementation(
-        platform("com.google.firebase:firebase-bom:34.16.0")
+        platform("com.google.firebase:firebase-bom:34.19.0")
+    )
+    implementation(
+        "com.google.firebase:firebase-ai"
     )
 
     implementation(
